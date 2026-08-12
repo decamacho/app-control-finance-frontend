@@ -1,5 +1,5 @@
 import { Settings, Wallet } from 'lucide-react'
-import { NAV, type Tab } from '../../type/layout/navigation'
+import { NAV, type Tab } from '../../type/navigation/navigation'
 
 interface SidebarProps {
   tab: Tab

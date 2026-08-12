@@ -1,4 +1,4 @@
-import { NAV, type Tab } from '../../type/layout/navigation'
+import { NAV, type Tab } from '../../type/navigation/navigation'
 
 interface BottomNavProps {
   tab: Tab
