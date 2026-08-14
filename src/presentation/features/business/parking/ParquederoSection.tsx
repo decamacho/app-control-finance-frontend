@@ -56,11 +56,11 @@ export function ParquederoSection({ parkingRates, onUpdateRates }: ParquederoSec
 
   return (
     <div>
-      {entriesQuery.isError && (
+      {/* {entriesQuery.isError && (
         <p className="text-xs text-rose-600 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 mb-5">
           No se pudo conectar con el servidor. Verifica que la API esté disponible.
         </p>
-      )}
+      )} */}
 
       <div className="hidden md:flex justify-end mb-4">
         <PrimaryButton className="md:w-auto md:px-6" onClick={() => setShowEntryExit(true)}>

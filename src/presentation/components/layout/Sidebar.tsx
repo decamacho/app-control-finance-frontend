@@ -1,12 +1,14 @@
 import { Settings, Wallet } from 'lucide-react'
+import { useNavigate } from 'react-router'
 import { NAV, type Tab } from '../../type/navigation/navigation'
 
 interface SidebarProps {
   tab: Tab
-  onTabChange: (tab: Tab) => void
 }
 
-export function Sidebar({ tab, onTabChange }: SidebarProps) {
+export function Sidebar({ tab }: SidebarProps) {
+  const navigate = useNavigate()
+
   return (
     <nav className="hidden md:flex flex-col fixed top-0 left-0 bottom-0 w-64 bg-card border-r border-border px-4 py-8 z-(--z-nav)">
       <div className="flex items-center gap-3 px-3 mb-8">
@@ -20,14 +22,14 @@ export function Sidebar({ tab, onTabChange }: SidebarProps) {
       </div>
 
       <div className="flex flex-col gap-1">
-        {NAV.map(({ id, label, Icon }) => {
+        {NAV.map(({ id, label, path, Icon }) => {
           const active = tab === id
           return (
             <button
               key={id}
               type="button"
               aria-current={active ? 'page' : undefined}
-              onClick={() => onTabChange(id)}
+              onClick={() => navigate(path)}
               className={`flex items-center gap-3 w-full px-3 py-3 rounded-xl text-sm font-bold transition-all ${
                 active ? 'bg-nav-active text-primary-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
               }`}
