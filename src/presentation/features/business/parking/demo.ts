@@ -1,0 +1,88 @@
+import type { ParkingEntry } from '../../../../core/domain/entities/parking'
+import type { VehicleListItem } from './VehicleList'
+
+export const VEHICLES_DEMO: VehicleListItem[] = [
+  {
+    id: 'demo-1',
+    plate: 'ABC-123',
+    vehicleType: 'car',
+    brand: 'Renault',
+    model: '2021',
+    color: 'azul',
+    phone: '300 111 2233',
+    email: 'cliente@mail.com',
+    monthly: true,
+    monthlyDate: '2026-08-01',
+  },
+  {
+    id: 'demo-2',
+    plate: 'XYZ-456',
+    vehicleType: 'motorcycle',
+    brand: 'Yamaha',
+    model: '2019',
+    color: 'negro',
+    phone: '320 222 3344',
+  },
+  {
+    id: 'demo-3',
+    plate: 'KLM-789',
+    vehicleType: 'truck',
+    brand: 'Chevrolet',
+    model: '2022',
+    color: 'verde',
+    phone: '311 333 4455',
+    monthly: true,
+    monthlyDate: '2026-07-15',
+  },
+  {
+    id: 'demo-4',
+    plate: 'DFG-101',
+    vehicleType: 'car',
+    brand: 'Toyota',
+    model: '2020',
+    color: 'rosa',
+  },
+  {
+    id: 'demo-5',
+    plate: 'JKL-202',
+    vehicleType: 'motorcycle',
+    brand: 'Honda',
+    model: '2023',
+    color: 'cian',
+    phone: '315 444 5566',
+  },
+]
+
+export const DEMO_ENTRIES: ParkingEntry[] = [
+  {
+    id: 'demo-e1',
+    plate: 'ABC-123',
+    vehicleType: 'car',
+    spaceNumber: '-',
+    entryTime: '2026-08-13T08:30',
+    hoursElapsed: 0,
+    exitTime: '2026-08-13T12:00',
+    amount: 12000,
+    status: 'completed',
+  },
+  {
+    id: 'demo-e2',
+    plate: 'ABC-123',
+    vehicleType: 'car',
+    spaceNumber: '-',
+    entryTime: '2026-08-14T07:00',
+    hoursElapsed: 0,
+    status: 'active',
+  },
+  {
+    id: 'demo-e3',
+    plate: 'XYZ-456',
+    vehicleType: 'motorcycle',
+    spaceNumber: '-',
+    entryTime: '2026-08-12T18:10',
+    hoursElapsed: 0,
+    exitTime: '2026-08-12T20:30',
+    amount: 5000,
+    status: 'completed',
+  },
+]

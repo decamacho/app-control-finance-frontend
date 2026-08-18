@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { ChevronDown, LogIn, LogOut } from 'lucide-react'
-import type { ParkingEntry, VehicleType } from '../../../../core/domain/entities/parking'
+import type { ParkingEntry } from '../../../../core/domain/entities/parking'
 import { parkingFee, type ParkingRates } from '../../../../core/domain/services/parking'
 import { formatMoney } from '../../../../core/domain/value-objects/money'
-import { VEHICLE_OPTIONS } from '../../../type/business/constants'
+import { PARKING_PAYMENT_OPTIONS } from '../../../type/business/constants'
 import { Field } from '../../../components/core/Field'
 import { FormModal } from '../../../components/core/FormModal'
-import { inputCls } from '../../../components/core/input'
 import { Toggle } from '../../../components/core/Toggle'
+import { inputCls } from '../../../components/core/input'
 import type { RegisterParkingEntryInput as RegisterEntryInput } from '../../../../core/application/register-parking-entry'
 
 interface EntryExitModalProps {
@@ -22,33 +22,38 @@ interface EntryExitModalProps {
 export function EntryExitModal({ open, onClose, active, rates, onRegisterEntry, onRegisterExit }: EntryExitModalProps) {
   const [mode, setMode] = useState<'entrada' | 'salida'>('entrada')
   const [plate, setPlate] = useState('')
-  const [vehicleType, setVehicleType] = useState<VehicleType>('car')
-  const [spaceNumber, setSpaceNumber] = useState('')
-  const [entryTime, setEntryTime] = useState(() => {
+  const [entryDate, setEntryDate] = useState(() => {
     const now = new Date()
-    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
+    return now.toISOString().slice(0, 16)
   })
   const [selectedId, setSelectedId] = useState('')
+  const [payments, setPayments] = useState<Record<string, string>>({})
 
   const selected = active.find((entry) => entry.id === (selectedId || active[0]?.id))
   const exitFee = selected ? parkingFee(selected, rates) : 0
+  const paid = PARKING_PAYMENT_OPTIONS.reduce(
+    (sum, option) => sum + (Number(payments[option.id]) || 0),
+    0,
+  )
+  const remaining = Math.max(0, exitFee - paid)
+  const completed = exitFee > 0 && remaining === 0
 
   const handleClose = () => {
     setMode('entrada')
     setPlate('')
-    setSpaceNumber('')
     setSelectedId('')
+    setPayments({})
     onClose()
   }
 
   const handleSave = () => {
     if (mode === 'entrada') {
-      if (!plate.trim() || !spaceNumber.trim()) return
-      onRegisterEntry({ plate, vehicleType, spaceNumber, entryTime })
+      if (!plate.trim()) return
+      onRegisterEntry({ plate, vehicleType: 'car', spaceNumber: '-', entryTime: entryDate })
       setPlate('')
-      setSpaceNumber('')
     } else {
-      if (!selected) return
+      if (!selected || !completed) return
       onRegisterExit(selected.id)
     }
     handleClose()
@@ -84,40 +89,14 @@ export function EntryExitModal({ open, onClose, active, rates, onRegisterEntry, 
               onChange={(e) => setPlate(e.target.value)}
             />
           </Field>
-          <Field label="Tipo de vehículo">
-            <div className="grid grid-cols-3 gap-2">
-              {VEHICLE_OPTIONS.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => setVehicleType(option.id)}
-                  className={`py-3 rounded-2xl text-xs font-bold border-2 transition-all flex flex-col items-center gap-1.5 ${
-                    vehicleType === option.id ? 'border-primary bg-secondary text-foreground' : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
-                  }`}
-                >
-                  <option.Icon size={20} />
-                  {option.label}
-                </button>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground mt-2 font-mono">Tarifa: {formatMoney(rates[vehicleType].hora)}/hora</p>
+          <Field label="Fecha de entrada">
+            <input
+              className={inputCls}
+              type="datetime-local"
+              value={entryDate}
+              onChange={(e) => setEntryDate(e.target.value)}
+            />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Espacio #">
-              <input
-                className={inputCls}
-                type="number"
-                placeholder="1"
-                min={1}
-                max={20}
-                value={spaceNumber}
-                onChange={(e) => setSpaceNumber(e.target.value)}
-              />
-            </Field>
-            <Field label="Hora entrada">
-              <input className={inputCls} type="time" value={entryTime} onChange={(e) => setEntryTime(e.target.value)} />
-            </Field>
-          </div>
         </>
       ) : (
         <>
@@ -127,13 +106,13 @@ export function EntryExitModal({ open, onClose, active, rates, onRegisterEntry, 
             ) : (
               <div className="relative">
                 <select
-                  className={inputCls + ' appearance-none pr-8'}
+                  className={inputCls + ' appearance-none pr-8 uppercase'}
                   value={selectedId || active[0]?.id}
                   onChange={(e) => setSelectedId(e.target.value)}
                 >
                   {active.map((entry) => (
                     <option key={entry.id} value={entry.id}>
-                      {entry.plate} · Espacio {entry.spaceNumber}
+                      {entry.plate}
                     </option>
                   ))}
                 </select>
@@ -141,6 +120,7 @@ export function EntryExitModal({ open, onClose, active, rates, onRegisterEntry, 
               </div>
             )}
           </Field>
+
           {selected && (
             <div className="bg-secondary rounded-2xl p-4 mb-5">
               <div className="flex justify-between items-center">
@@ -151,6 +131,38 @@ export function EntryExitModal({ open, onClose, active, rates, onRegisterEntry, 
                   </p>
                 </div>
                 <span className="text-2xl font-mono font-bold text-foreground">{formatMoney(exitFee)}</span>
+              </div>
+            </div>
+          )}
+
+          {selected && (
+            <div className="mb-5">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Medios de pago</p>
+              <div className="grid gap-2">
+                {PARKING_PAYMENT_OPTIONS.map((option) => (
+                  <div key={option.id} className="flex items-center gap-3 bg-card border border-border rounded-2xl px-3 py-2">
+                    <span className="text-lg">{option.emoji}</span>
+                    <span className="text-sm font-bold text-foreground flex-1">{option.label}</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      placeholder="$0"
+                      className="w-28 bg-input-background border border-border rounded-xl px-3 py-2 text-sm text-right text-foreground outline-none focus:border-primary transition-colors placeholder:text-muted-foreground font-mono"
+                      value={payments[option.id] ?? ''}
+                      onChange={(e) => setPayments((prev) => ({ ...prev, [option.id]: e.target.value }))}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div
+                className={`mt-3 rounded-2xl px-4 py-3 text-sm font-bold flex items-center justify-between ${
+                  completed ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-amber-50 text-amber-700 border border-amber-100'
+                }`}
+              >
+                <span>{completed ? 'Pago completo' : 'Falta por pagar'}</span>
+                <span className="font-mono">{formatMoney(remaining)}</span>
               </div>
             </div>
           )}

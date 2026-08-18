@@ -13,8 +13,11 @@ import {
 } from '../../../hooks/useParkingQuery'
 import { PrimaryButton } from '../../../components/core/PrimaryButton'
 import { EntryExitModal } from './EntryExitModal'
+import { DEMO_ENTRIES, VEHICLES_DEMO } from './demo'
 import { RatesModal } from './RatesModal'
-import { VehicleModal } from './VehicleModal'
+import { VehicleDetailModal } from './VehicleDetailModal'
+import { VehicleList, type VehicleListItem } from './VehicleList'
+import { VehicleModal, type VehicleFormData } from './VehicleModal'
 
 const EMPTY_ENTRIES: ParkingEntry[] = []
 const EMPTY_VEHICLES: ParkingVehicle[] = []
@@ -33,9 +36,13 @@ export function ParquederoSection({ parkingRates, onUpdateRates }: ParquederoSec
   const [showEntryExit, setShowEntryExit] = useState(false)
   const [showVehicle, setShowVehicle] = useState(false)
   const [showRates, setShowRates] = useState(false)
+  const [editVehicle, setEditVehicle] = useState<VehicleListItem | null>(null)
+  const [detailVehicle, setDetailVehicle] = useState<VehicleListItem | null>(null)
 
   const entries = entriesQuery.data ?? EMPTY_ENTRIES
   const vehicles = vehiclesQuery.data ?? EMPTY_VEHICLES
+  const displayVehicles = vehicles.length > 0 ? vehicles : VEHICLES_DEMO
+  const displayEntries = entries.length > 0 ? entries : DEMO_ENTRIES
 
   const active = useMemo(() => entries.filter((entry) => entry.status === 'active'), [entries])
   const completed = useMemo(() => entries.filter((entry) => entry.status === 'completed'), [entries])
@@ -62,13 +69,6 @@ export function ParquederoSection({ parkingRates, onUpdateRates }: ParquederoSec
         </p>
       )} */}
 
-      <div className="hidden md:flex justify-end mb-4">
-        <PrimaryButton className="md:w-auto md:px-6" onClick={() => setShowEntryExit(true)}>
-          <Plus size={18} />
-          Registrar entrada / salida
-        </PrimaryButton>
-      </div>
-
       <div className="grid grid-cols-3 gap-2 mb-5">
         <div className="bg-card border border-border rounded-2xl p-3 text-center">
           <p className="text-2xl font-mono font-bold text-foreground">{parkingStats.total}</p>
@@ -82,6 +82,45 @@ export function ParquederoSection({ parkingRates, onUpdateRates }: ParquederoSec
           <p className="text-2xl font-mono font-bold text-emerald-600">{parkingStats.free}</p>
           <p className="text-xs text-emerald-500 font-bold mt-0.5">Libres</p>
         </div>
+      </div>
+
+      <div className="hidden md:flex gap-2 mb-5">
+        <button
+          type="button"
+          onClick={() => setShowVehicle(true)}
+          className="flex items-center gap-3 flex-1 bg-card border border-border rounded-2xl p-4 text-left active:scale-[0.99] transition-all hover:border-primary/50 hover:shadow-sm cursor-pointer"
+        >
+          <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center text-primary flex-shrink-0">
+            <CarFront size={16} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-foreground">Registrar vehículo</p>
+            <p className="text-xs text-muted-foreground">Placas y tipo de vehículo</p>
+          </div>
+          <ChevronRight size={16} className="text-muted-foreground" />
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowRates(true)}
+          className="flex items-center gap-3 flex-1 bg-card border border-border rounded-2xl p-4 text-left active:scale-[0.99] transition-all hover:border-primary/50 hover:shadow-sm cursor-pointer"
+        >
+          <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center text-primary flex-shrink-0">
+            <Coins size={16} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-foreground">Tarifas</p>
+            <p className="text-xs text-muted-foreground">Valor por hora, noche, día y mes</p>
+          </div>
+          <ChevronRight size={16} className="text-muted-foreground" />
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowEntryExit(true)}
+          className="flex items-center justify-center gap-2 ml-auto px-6 bg-accent text-accent-foreground rounded-2xl font-bold text-sm hover:brightness-105 active:scale-[0.99] transition-all cursor-pointer"
+        >
+          <Plus size={18} />
+          Registrar entrada / salida
+        </button>
       </div>
 
       <div className="bg-card border border-border rounded-2xl p-4 mb-5">
@@ -112,7 +151,7 @@ export function ParquederoSection({ parkingRates, onUpdateRates }: ParquederoSec
         </div>
       </div>
 
-      <div className="grid gap-2 mb-5 md:grid-cols-2">
+      <div className="grid gap-2 mb-5 md:hidden">
         <button
           type="button"
           onClick={() => setShowVehicle(true)}
@@ -143,6 +182,20 @@ export function ParquederoSection({ parkingRates, onUpdateRates }: ParquederoSec
         </button>
       </div>
 
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-sm font-bold text-foreground">Vehículos registrados</p>
+        <span className="text-xs font-bold text-muted-foreground">{displayVehicles.length}</span>
+      </div>
+      <div className="mb-5">
+        <VehicleList
+          vehicles={displayVehicles}
+          onEdit={setEditVehicle}
+          onDetail={setDetailVehicle}
+          onDelete={() => {}}
+          onCancelMonthly={() => {}}
+        />
+      </div>
+
       <div className="sticky bottom-24 md:bottom-4 -mx-5 px-5 pt-3 bg-background/95 backdrop-blur-sm md:hidden">
         <PrimaryButton onClick={() => setShowEntryExit(true)}>
           <Plus size={18} />
@@ -159,10 +212,25 @@ export function ParquederoSection({ parkingRates, onUpdateRates }: ParquederoSec
         onRegisterExit={registerExit.mutate}
       />
       <VehicleModal
+        key={`add-${showVehicle}`}
         open={showVehicle}
         onClose={() => setShowVehicle(false)}
-        vehicles={vehicles}
-        onSave={registerVehicle.mutate}
+        onSave={(input: VehicleFormData) => {
+          registerVehicle.mutate({ plate: input.plate, vehicleType: input.vehicleType })
+        }}
+      />
+      <VehicleModal
+        key={`edit-${Boolean(editVehicle)}-${editVehicle?.id ?? 'none'}`}
+        open={Boolean(editVehicle)}
+        onClose={() => setEditVehicle(null)}
+        initial={editVehicle}
+        onSave={() => {}}
+      />
+      <VehicleDetailModal
+        open={Boolean(detailVehicle)}
+        onClose={() => setDetailVehicle(null)}
+        vehicle={detailVehicle}
+        entries={displayEntries}
       />
       <RatesModal open={showRates} onClose={() => setShowRates(false)} rates={parkingRates} onSave={onUpdateRates} />
     </div>
