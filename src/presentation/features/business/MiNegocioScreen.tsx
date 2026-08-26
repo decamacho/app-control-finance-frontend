@@ -1,13 +1,33 @@
 import { useState } from 'react'
 import { Building2 } from 'lucide-react'
-import { PARKING_RATES, type ParkingRates } from '../../../core/domain/services/parking'
 import { BusinessTabs, type BusinessTab } from './BusinessTabs'
 import { ParquederoSection } from './parking/ParquederoSection'
 import { TiendaSection } from './store/TiendaSection'
+import { useQuery } from '@tanstack/react-query'
+import { getAccessToken } from '@/infrastructure/api/http-client'
+import { ApiBusinessRepository } from '@/infrastructure/api/api-business.repository'
+import { queryKeys } from '@/presentation/query/keys'
+import type { Business } from '../../../core/domain/entities/business'
+
+const businessRepository = new ApiBusinessRepository()
+
+function useBusinesses() {
+  return useQuery({
+    queryKey: queryKeys.business.list,
+    queryFn: () => businessRepository.list(),
+    enabled: Boolean(getAccessToken()),
+    staleTime: 60_000,
+  })
+}
 
 export function MiNegocioScreen() {
   const [businessTab, setBusinessTab] = useState<BusinessTab>('parquedero')
-  const [parkingRates, setParkingRates] = useState<ParkingRates>(PARKING_RATES)
+  const { data: businesses } = useBusinesses()
+
+  const parkingBusiness = businesses?.find((b: Business) => b.businessType === 'PARKING') ?? null
+  const otherBusiness = businesses?.find((b: Business) => b.businessType !== 'PARKING') ?? null
+
+  const currentBusiness = businessTab === 'parquedero' ? parkingBusiness : otherBusiness
 
   return (
     <div className="pb-6">
@@ -25,7 +45,7 @@ export function MiNegocioScreen() {
 
       <div className="px-5">
         {businessTab === 'parquedero' ? (
-          <ParquederoSection parkingRates={parkingRates} onUpdateRates={setParkingRates} />
+          currentBusiness ? <ParquederoSection idBusiness={currentBusiness.idBusiness} /> : null
         ) : (
           <TiendaSection />
         )}

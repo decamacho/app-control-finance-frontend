@@ -1,6 +1,8 @@
 import { Bike, Car, Truck, type LucideIcon } from 'lucide-react'
-import type { VehicleType } from '../../../core/domain/entities/parking'
+import type { VehicleType as ApiVehicleType } from '../../../core/domain/entities/api'
 import type { PaymentMethod } from '../../../core/domain/entities/sale'
+
+type DemoVehicleType = 'car' | 'motorcycle' | 'truck'
 
 export const HOURLY_SALES_DATA = [
   { hour: '7am', amount: 15500 },
@@ -10,15 +12,21 @@ export const HOURLY_SALES_DATA = [
   { hour: '11am', amount: 38000 },
 ]
 
-export const VEHICLE_OPTIONS: { id: VehicleType; label: string; Icon: LucideIcon }[] = [
+export const VEHICLE_OPTIONS: { id: DemoVehicleType; label: string; Icon: LucideIcon }[] = [
   { id: 'car', label: 'Carro', Icon: Car },
   { id: 'motorcycle', label: 'Moto', Icon: Bike },
   { id: 'truck', label: 'Camioneta', Icon: Truck },
 ]
 
+export const API_VEHICLE_OPTIONS: { id: ApiVehicleType; label: string; Icon: LucideIcon }[] = [
+  { id: 'MOTO', label: 'Moto', Icon: Bike },
+  { id: 'CARRO', label: 'Carro', Icon: Car },
+  { id: 'CAMIONETA', label: 'Camioneta', Icon: Truck },
+]
+
 export const VEHICLE_FILTER_OPTIONS = [
   { id: 'all', label: 'Todos' },
-  ...VEHICLE_OPTIONS.map(({ id, label }) => ({ id, label })),
+  ...API_VEHICLE_OPTIONS.map(({ id, label }) => ({ id, label })),
 ]
 
 export const VEHICLE_COLORS = [
@@ -33,16 +41,18 @@ export const VEHICLE_COLORS = [
 ]
 
 export const PARKING_PAYMENT_OPTIONS = [
-  { id: 'nequi', label: 'Nequi', emoji: '📱' },
-  { id: 'efectivo', label: 'Efectivo', emoji: '💵' },
-  { id: 'breve', label: 'Breve', emoji: '🧾' },
-  { id: 'otro', label: 'Otro', emoji: '➕' },
+  { id: 'NEQUI', label: 'Nequi' },
+  { id: 'CASH', label: 'Efectivo' },
+  { id: 'BREVE', label: 'Breve' },
+  { id: 'LLAVE', label: 'Llave' },
+  { id: 'DEVIPLATA', label: 'Deviplata' },
+  { id: 'OTHER', label: 'Otro' },
 ] as const
 
 export type ParkingPaymentMethod = (typeof PARKING_PAYMENT_OPTIONS)[number]['id']
 
 export const PAYMENT_OPTIONS: [PaymentMethod, string][] = [
-  ['efectivo', '💵 Efectivo'],
-  ['nequi', '📱 Nequi'],
-  ['tarjeta', '💳 Tarjeta'],
+  ['efectivo', 'Efectivo'],
+  ['nequi', 'Nequi'],
+  ['tarjeta', 'Tarjeta'],
 ]

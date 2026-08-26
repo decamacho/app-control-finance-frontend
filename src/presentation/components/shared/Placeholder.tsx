@@ -1,8 +1,8 @@
-interface PlaceholderScreenProps {
+interface PlaceholderProps {
   label: string
 }
 
-export function PlaceholderScreen({ label }: PlaceholderScreenProps) {
+export function Placeholder({ label }: PlaceholderProps) {
   return (
     <header className="px-5 pt-7 pb-4">
       <h1 className="text-xl font-bold text-foreground">{label}</h1>

@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
-import { Bike, CalendarX, Car, List, Pencil, Trash2, Truck } from 'lucide-react'
-import type { ParkingVehicle } from '../../../../core/domain/entities/vehicle'
+import { CalendarX, Car, List, Pencil, Trash2 } from 'lucide-react'
+import type { ParkingVehicle } from '../../../../core/domain/entities/parking'
 import { VEHICLE_COLORS, VEHICLE_FILTER_OPTIONS } from '../../../type/business/constants'
-import type { VehicleFormData } from './VehicleModal'
+import { TYPE_ICONS } from './icons'
 
-export type VehicleListItem = ParkingVehicle & Partial<VehicleFormData>
+export type VehicleListItem = ParkingVehicle
 
 interface VehicleListProps {
   vehicles: VehicleListItem[]
@@ -13,8 +13,6 @@ interface VehicleListProps {
   onDelete: (vehicle: VehicleListItem) => void
   onCancelMonthly: (vehicle: VehicleListItem) => void
 }
-
-const TYPE_ICONS = { car: Car, motorcycle: Bike, truck: Truck } as const
 
 export function VehicleList({ vehicles, onEdit, onDetail, onDelete, onCancelMonthly }: VehicleListProps) {
   const [filter, setFilter] = useState('all')
@@ -53,13 +51,13 @@ export function VehicleList({ vehicles, onEdit, onDetail, onDelete, onCancelMont
           const Icon = TYPE_ICONS[vehicle.vehicleType] ?? Car
           const color = VEHICLE_COLORS.find((option) => option.id === vehicle.color)
           return (
-            <div key={vehicle.id} className="bg-card border border-border rounded-2xl p-4">
+            <div key={vehicle.idVehicle} className="bg-card border border-border rounded-2xl p-4">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center text-primary flex-shrink-0">
                   <Icon size={16} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-mono uppercase font-bold text-foreground">{vehicle.plate}</p>
+                  <p className="font-mono uppercase font-bold text-foreground">{vehicle.licensePlate}</p>
                   <p className="text-xs text-muted-foreground truncate">
                     {[vehicle.brand, vehicle.model].filter(Boolean).join(' · ') || 'Información incompleta'}
                   </p>
@@ -74,14 +72,15 @@ export function VehicleList({ vehicles, onEdit, onDetail, onDelete, onCancelMont
               </div>
 
               <div className="flex flex-wrap gap-2 mt-3">
-                {vehicle.monthly && (
+                {vehicle.monthlyStartDate && (
                   <span className="bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full px-2.5 py-0.5 text-xs font-bold">
-                    Mensualidad{vehicle.monthlyDate ? ` · ${vehicle.monthlyDate}` : ''}
+                    Mensualidad · Desde {new Date(vehicle.monthlyStartDate).toLocaleDateString('es-CO')}
+                    {vehicle.monthlyEndDate ? ` · Hasta ${new Date(vehicle.monthlyEndDate).toLocaleDateString('es-CO')}` : ''}
                   </span>
                 )}
-                {vehicle.phone && (
+                {vehicle.phoneOwner && (
                   <span className="bg-secondary text-muted-foreground rounded-full px-2.5 py-0.5 text-xs font-bold">
-                    {vehicle.phone}
+                    {vehicle.phoneOwner}
                   </span>
                 )}
               </div>
@@ -103,7 +102,7 @@ export function VehicleList({ vehicles, onEdit, onDetail, onDelete, onCancelMont
                   <Pencil size={14} />
                   Editar
                 </button>
-                {vehicle.monthly && (
+                {vehicle.monthlyStartDate && !vehicle.monthlyEndDate && (
                   <button
                     type="button"
                     onClick={() => onCancelMonthly(vehicle)}

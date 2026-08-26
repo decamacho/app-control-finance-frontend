@@ -16,7 +16,7 @@ export interface ConfirmResetInput {
   newPassword: string
 }
 
-interface ForgotPasswordScreenProps {
+interface ForgotPasswordProps {
   sending?: boolean
   resetting?: boolean
   error?: string | null
@@ -24,13 +24,13 @@ interface ForgotPasswordScreenProps {
   onConfirmReset: (input: ConfirmResetInput) => void
 }
 
-export function ForgotPasswordScreen({
+export function ForgotPassword({
   sending,
   resetting,
   error,
   onRequestReset,
   onConfirmReset,
-}: ForgotPasswordScreenProps) {
+}: ForgotPasswordProps) {
   const navigate = useNavigate()
   const [step, setStep] = useState<'email' | 'code'>('email')
   const [email, setEmail] = useState('')

@@ -1,74 +1,109 @@
 import { useMemo, useState } from 'react'
-import { BarChart3, CarFront, ChevronRight, Coins, Plus } from 'lucide-react'
-import type { ParkingEntry } from '../../../../core/domain/entities/parking'
-import type { ParkingVehicle } from '../../../../core/domain/entities/vehicle'
-import { TOTAL_SPACES, parkingFee, type ParkingRates } from '../../../../core/domain/services/parking'
+import { BarChart3, CarFront, ChevronRight, Coins, Info, Plus } from 'lucide-react'
+import type { ParkingVehicle, ParkingTicket } from '../../../../core/domain/entities/parking'
 import { formatMoney } from '../../../../core/domain/value-objects/money'
 import {
-  useParkingEntries,
+  useActiveParkingTickets,
+  useParkingTickets,
+  useParkingRates,
   useParkingVehicles,
-  useRegisterParkingEntry,
-  useRegisterParkingExit,
-  useRegisterParkingVehicle,
+  useDeleteParkingVehicle,
 } from '../../../hooks/useParkingQuery'
 import { PrimaryButton } from '../../../components/core/PrimaryButton'
 import { EntryExitModal } from './EntryExitModal'
-import { DEMO_ENTRIES, VEHICLES_DEMO } from './demo'
 import { RatesModal } from './RatesModal'
 import { VehicleDetailModal } from './VehicleDetailModal'
-import { VehicleList, type VehicleListItem } from './VehicleList'
-import { VehicleModal, type VehicleFormData } from './VehicleModal'
-
-const EMPTY_ENTRIES: ParkingEntry[] = []
-const EMPTY_VEHICLES: ParkingVehicle[] = []
+import { VehicleList } from './VehicleList'
+import { VehicleModal } from './VehicleModal'
+import { PaymentsModal } from './PaymentsModal'
+import { MonthlyModal } from './MonthlyModal'
 
 interface ParquederoSectionProps {
-  parkingRates: ParkingRates
-  onUpdateRates: (rates: ParkingRates) => void
+  idBusiness: string
 }
 
-export function ParquederoSection({ parkingRates, onUpdateRates }: ParquederoSectionProps) {
-  const entriesQuery = useParkingEntries()
-  const vehiclesQuery = useParkingVehicles()
-  const registerEntry = useRegisterParkingEntry()
-  const registerExit = useRegisterParkingExit()
-  const registerVehicle = useRegisterParkingVehicle()
+export function ParquederoSection({ idBusiness }: ParquederoSectionProps) {
   const [showEntryExit, setShowEntryExit] = useState(false)
   const [showVehicle, setShowVehicle] = useState(false)
   const [showRates, setShowRates] = useState(false)
-  const [editVehicle, setEditVehicle] = useState<VehicleListItem | null>(null)
-  const [detailVehicle, setDetailVehicle] = useState<VehicleListItem | null>(null)
+  const [editVehicle, setEditVehicle] = useState<ParkingVehicle | null>(null)
+  const [detailVehicle, setDetailVehicle] = useState<ParkingVehicle | null>(null)
+  const [showPayments, setShowPayments] = useState<{ idTicket: string; totalAmount: number; pendingAmount: number } | null>(null)
+  const [showMonthly, setShowMonthly] = useState<{ idTicket: string; monthlyPrice: number; isActive: boolean; vehicleLicensePlate: string } | null>(null)
 
-  const entries = entriesQuery.data ?? EMPTY_ENTRIES
-  const vehicles = vehiclesQuery.data ?? EMPTY_VEHICLES
-  const displayVehicles = vehicles.length > 0 ? vehicles : VEHICLES_DEMO
-  const displayEntries = entries.length > 0 ? entries : DEMO_ENTRIES
+  const { data: ratesData } = useParkingRates(idBusiness)
+  const activeTickets = useActiveParkingTickets(idBusiness)
+  const allTickets = useParkingTickets(idBusiness)
+  const vehicles = useParkingVehicles(idBusiness)
 
-  const active = useMemo(() => entries.filter((entry) => entry.status === 'active'), [entries])
-  const completed = useMemo(() => entries.filter((entry) => entry.status === 'completed'), [entries])
+  const { mutate: _deleteVehicle } = useDeleteParkingVehicle()
+
+  const rates = ratesData ?? []
+  const hasRates = rates.length > 0
+
+  const active = useMemo(() => activeTickets.data?.filter((t) => t.ticketStatus === 'ACTIVE') ?? [], [activeTickets.data])
+  const completed = useMemo(() => allTickets.data?.filter((t) => t.ticketStatus === 'COMPLETED') ?? [], [allTickets.data])
 
   const parkingStats = useMemo(() => {
-    const activeFee = active.reduce((sum, entry) => sum + parkingFee(entry, parkingRates), 0)
-    const completedAmount = completed.reduce((sum, entry) => sum + (entry.amount ?? 0), 0)
+    const activeFee = active.reduce((sum, entry) => sum + entry.pendingAmount, 0)
+    const completedAmount = completed.reduce((sum, entry) => sum + entry.totalAmount, 0)
     return {
-      total: TOTAL_SPACES,
+      total: 0,
       occupied: active.length,
-      free: TOTAL_SPACES - active.length,
+      free: 0,
       todayRevenue: completedAmount + activeFee,
       activeFee,
       completedAmount,
       entriesCount: completed.length + active.length,
     }
-  }, [active, completed, parkingRates])
+  }, [active, completed])
+
+  const monthlyPriceForVehicle = (plate: string) => {
+    const vehicle = vehicles.data?.find((v) => v.licensePlate === plate)
+    if (!vehicle) return 0
+    const monthlyRate = rates.find((r) => r.vehicleType === vehicle.vehicleType && r.shiftType === 'MONTHLY')
+    return monthlyRate?.price ?? 0
+  }
+
+  const handleEditVehicle = (vehicle: ParkingVehicle) => setEditVehicle(vehicle)
+  const handleDetailVehicle = (vehicle: ParkingVehicle) => setDetailVehicle(vehicle)
+
+  const handleDeleteVehicle = (vehicle: ParkingVehicle) => {
+    if (confirm(`Eliminar ${vehicle.licensePlate}?`)) {
+      _deleteVehicle({ idBusiness, idVehicle: vehicle.idVehicle })
+    }
+  }
+
+  const handlePayTicket = (ticket: ParkingTicket) => {
+    setShowPayments({ idTicket: ticket.idTicket, totalAmount: ticket.totalAmount, pendingAmount: ticket.pendingAmount })
+  }
+
+  const handleActivateMonthly = (vehicle: ParkingVehicle) => {
+    const vehicleTickets = (allTickets.data ?? []).filter((t) => t.licensePlate === vehicle.licensePlate)
+    const activeTicket = vehicleTickets.find((t) => t.ticketStatus === 'ACTIVE')
+    if (!activeTicket) return
+    setShowMonthly({
+      idTicket: activeTicket.idTicket,
+      monthlyPrice: monthlyPriceForVehicle(vehicle.licensePlate),
+      isActive: false,
+      vehicleLicensePlate: vehicle.licensePlate,
+    })
+  }
+
+  const handleCancelMonthly = (vehicle: ParkingVehicle) => {
+    const vehicleTickets = (allTickets.data ?? []).filter((t) => t.licensePlate === vehicle.licensePlate)
+    const activeTicket = vehicleTickets.find((t) => t.ticketStatus === 'ACTIVE')
+    if (!activeTicket) return
+    setShowMonthly({
+      idTicket: activeTicket.idTicket,
+      monthlyPrice: monthlyPriceForVehicle(vehicle.licensePlate),
+      isActive: true,
+      vehicleLicensePlate: vehicle.licensePlate,
+    })
+  }
 
   return (
     <div>
-      {/* {entriesQuery.isError && (
-        <p className="text-xs text-rose-600 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 mb-5">
-          No se pudo conectar con el servidor. Verifica que la API esté disponible.
-        </p>
-      )} */}
-
       <div className="grid grid-cols-3 gap-2 mb-5">
         <div className="bg-card border border-border rounded-2xl p-3 text-center">
           <p className="text-2xl font-mono font-bold text-foreground">{parkingStats.total}</p>
@@ -84,11 +119,24 @@ export function ParquederoSection({ parkingRates, onUpdateRates }: ParquederoSec
         </div>
       </div>
 
+      {!hasRates && (
+        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-5 flex items-start gap-3">
+          <Info size={18} className="text-amber-600 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-bold text-amber-700">No hay tarifas configuradas</p>
+            <p className="text-xs text-amber-600 mt-1">Ve a Tarifas para definir precios por tipo de vehículo y turno. No se podrán registrar vehículos hasta que configure al menos una tarifa.</p>
+          </div>
+        </div>
+      )}
+
       <div className="hidden md:flex gap-2 mb-5">
         <button
           type="button"
-          onClick={() => setShowVehicle(true)}
-          className="flex items-center gap-3 flex-1 bg-card border border-border rounded-2xl p-4 text-left active:scale-[0.99] transition-all hover:border-primary/50 hover:shadow-sm cursor-pointer"
+          disabled={!hasRates}
+          onClick={() => hasRates && setShowVehicle(true)}
+          className={`flex items-center gap-3 flex-1 border rounded-2xl p-4 text-left transition-all ${
+            hasRates ? 'bg-card border-border hover:border-primary/50 hover:shadow-sm active:scale-[0.99] cursor-pointer' : 'bg-muted border-border opacity-60 cursor-not-allowed'
+          }`}
         >
           <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center text-primary flex-shrink-0">
             <CarFront size={16} />
@@ -154,8 +202,11 @@ export function ParquederoSection({ parkingRates, onUpdateRates }: ParquederoSec
       <div className="grid gap-2 mb-5 md:hidden">
         <button
           type="button"
-          onClick={() => setShowVehicle(true)}
-          className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 text-left active:scale-[0.99] transition-all hover:border-primary/50 hover:shadow-sm"
+          disabled={!hasRates}
+          onClick={() => hasRates && setShowVehicle(true)}
+          className={`flex items-center gap-3 border rounded-2xl p-4 text-left transition-all ${
+            hasRates ? 'bg-card border-border hover:border-primary/50 hover:shadow-sm active:scale-[0.99]' : 'bg-muted border-border opacity-60 cursor-not-allowed'
+          }`}
         >
           <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center text-primary flex-shrink-0">
             <CarFront size={16} />
@@ -184,15 +235,15 @@ export function ParquederoSection({ parkingRates, onUpdateRates }: ParquederoSec
 
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm font-bold text-foreground">Vehículos registrados</p>
-        <span className="text-xs font-bold text-muted-foreground">{displayVehicles.length}</span>
+        <span className="text-xs font-bold text-muted-foreground">{vehicles.data?.length ?? 0}</span>
       </div>
       <div className="mb-5">
         <VehicleList
-          vehicles={displayVehicles}
-          onEdit={setEditVehicle}
-          onDetail={setDetailVehicle}
-          onDelete={() => {}}
-          onCancelMonthly={() => {}}
+          vehicles={vehicles.data ?? []}
+          onEdit={handleEditVehicle}
+          onDetail={handleDetailVehicle}
+          onDelete={handleDeleteVehicle}
+          onCancelMonthly={handleCancelMonthly}
         />
       </div>
 
@@ -203,36 +254,47 @@ export function ParquederoSection({ parkingRates, onUpdateRates }: ParquederoSec
         </PrimaryButton>
       </div>
 
-      <EntryExitModal
-        open={showEntryExit}
-        onClose={() => setShowEntryExit(false)}
-        active={active}
-        rates={parkingRates}
-        onRegisterEntry={registerEntry.mutate}
-        onRegisterExit={registerExit.mutate}
-      />
+      <EntryExitModal open={showEntryExit} onClose={() => setShowEntryExit(false)} idBusiness={idBusiness} />
       <VehicleModal
-        key={`add-${showVehicle}`}
         open={showVehicle}
         onClose={() => setShowVehicle(false)}
-        onSave={(input: VehicleFormData) => {
-          registerVehicle.mutate({ plate: input.plate, vehicleType: input.vehicleType })
-        }}
+        idBusiness={idBusiness}
+        hasRates={hasRates}
       />
       <VehicleModal
-        key={`edit-${Boolean(editVehicle)}-${editVehicle?.id ?? 'none'}`}
-        open={Boolean(editVehicle)}
+        open={!!editVehicle}
         onClose={() => setEditVehicle(null)}
         initial={editVehicle}
-        onSave={() => {}}
+        idBusiness={idBusiness}
+        hasRates={hasRates}
       />
       <VehicleDetailModal
-        open={Boolean(detailVehicle)}
+        open={!!detailVehicle}
         onClose={() => setDetailVehicle(null)}
         vehicle={detailVehicle}
-        entries={displayEntries}
+        tickets={allTickets.data ?? []}
+        onPayTicket={handlePayTicket}
+        onActivateMonthly={handleActivateMonthly}
+        onCancelMonthly={handleCancelMonthly}
       />
-      <RatesModal open={showRates} onClose={() => setShowRates(false)} rates={parkingRates} onSave={onUpdateRates} />
+      <RatesModal open={showRates} onClose={() => setShowRates(false)} idBusiness={idBusiness} />
+      <PaymentsModal
+        open={!!showPayments}
+        onClose={() => setShowPayments(null)}
+        idTicket={showPayments?.idTicket ?? ''}
+        totalAmount={showPayments?.totalAmount ?? 0}
+        pendingAmount={showPayments?.pendingAmount ?? 0}
+      />
+      <MonthlyModal
+        open={!!showMonthly}
+        onClose={() => setShowMonthly(null)}
+        idTicket={showMonthly?.idTicket ?? ''}
+        monthlyPrice={showMonthly ? monthlyPriceForVehicle(showMonthly.vehicleLicensePlate) : 0}
+        isActive={showMonthly?.isActive ?? false}
+        vehicleLicensePlate={showMonthly?.vehicleLicensePlate ?? ''}
+        onActivate={() => setShowMonthly(null)}
+        onCancel={() => setShowMonthly(null)}
+      />
     </div>
   )
 }

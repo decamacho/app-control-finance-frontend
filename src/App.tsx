@@ -1,24 +1,33 @@
 import { Navigate, Route, Routes } from 'react-router'
 import { AppShell } from './presentation/components/layout/AppShell'
-import { PlaceholderScreen } from './presentation/components/shared/PlaceholderScreen'
-import { ForgotPasswordScreen } from './presentation/features/auth/ForgotPasswordScreen'
-import { LoginScreen } from './presentation/features/auth/LoginScreen'
-import { RegisterScreen } from './presentation/features/auth/RegisterScreen'
+import { Placeholder } from './presentation/components/shared/Placeholder'
+import { AuthGuard } from './presentation/features/auth/AuthGuard'
+import { Login } from './presentation/features/auth/Login'
+import { Register } from './presentation/features/auth/Register'
+import { VerifyEmail } from './presentation/features/auth/VerifyEmail'
 import { MiNegocioScreen } from './presentation/features/business/MiNegocioScreen'
+import { SettingsScreen } from './presentation/features/settings/SettingsScreen'
 
 function App() {
   return (
     <Routes>
-      <Route path="/login" element={<LoginScreen onLogin={() => {}} />} />
-      <Route path="/register" element={<RegisterScreen onRegister={() => {}} />} />
-      <Route path="/forgot-password" element={<ForgotPasswordScreen onRequestReset={() => {}} onConfirmReset={() => {}} />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/verify-email/:token" element={<VerifyEmail />} />
 
-      <Route element={<AppShell />}>
-        <Route path="/" element={<PlaceholderScreen label="Inicio" />} />
-        <Route path="/wallets" element={<PlaceholderScreen label="Billeteras" />} />
-        <Route path="/expenses" element={<PlaceholderScreen label="Gastos" />} />
-        <Route path="/reminders" element={<PlaceholderScreen label="Avisos" />} />
+      <Route
+        element={
+          <AuthGuard>
+            <AppShell />
+          </AuthGuard>
+        }
+      >
+        <Route path="/" element={<Placeholder label="Inicio" />} />
+        <Route path="/wallets" element={<Placeholder label="Billeteras" />} />
+        <Route path="/expenses" element={<Placeholder label="Gastos" />} />
+        <Route path="/reminders" element={<Placeholder label="Avisos" />} />
         <Route path="/business" element={<MiNegocioScreen />} />
+        <Route path="/settings" element={<SettingsScreen />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

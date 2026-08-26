@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router'
 import { Field } from '../../components/core/Field'
 import { PrimaryButton } from '../../components/core/PrimaryButton'
 import { inputCls } from '../../components/core/input'
+import { getErrorMessage } from '../../../infrastructure/api/http-client'
+import { useLogin } from '../../hooks/useAuth'
 import { AuthLayout } from './AuthLayout'
 import { PasswordField } from './PasswordField'
 
@@ -12,20 +14,15 @@ export interface LoginInput {
   password: string
 }
 
-interface LoginScreenProps {
-  loading?: boolean
-  error?: string | null
-  onLogin: (input: LoginInput) => void
-}
-
-export function LoginScreen({ loading, error, onLogin }: LoginScreenProps) {
+export function Login() {
   const navigate = useNavigate()
+  const login = useLogin()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
   const handleSubmit = () => {
     if (!email.trim() || !password) return
-    onLogin({ email: email.trim(), password })
+    login.mutate({ emailUser: email.trim(), passwordUser: password })
   }
 
   return (
@@ -44,20 +41,14 @@ export function LoginScreen({ loading, error, onLogin }: LoginScreenProps) {
         <PasswordField value={password} onChange={setPassword} />
       </Field>
 
-      <button
-        type="button"
-        onClick={() => navigate('/forgot-password')}
-        className="block ml-auto mb-5 text-sm font-bold text-primary hover:underline cursor-pointer"
-      >
-        ¿Olvidaste tu contraseña?
-      </button>
-
-      {error && (
-        <p className="bg-rose-50 text-rose-700 border border-rose-100 rounded-xl p-3 text-sm mb-5">{error}</p>
+      {login.isError && (
+        <p className="bg-rose-50 text-rose-700 border border-rose-100 rounded-xl p-3 text-sm mb-5">
+          {getErrorMessage(login.error)}
+        </p>
       )}
 
-      <PrimaryButton onClick={handleSubmit} disabled={loading} className={loading ? 'opacity-50' : ''}>
-        {loading ? <Loader2 size={18} className="animate-spin" /> : null}
+      <PrimaryButton onClick={handleSubmit} disabled={login.isPending} className={login.isPending ? 'opacity-50' : ''}>
+        {login.isPending ? <Loader2 size={18} className="animate-spin" /> : null}
         Iniciar sesión
       </PrimaryButton>
 

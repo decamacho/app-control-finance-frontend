@@ -1,6 +1,8 @@
-import { Settings, Wallet } from 'lucide-react'
+import { Settings, Wallet, LogOut } from 'lucide-react'
 import { useNavigate } from 'react-router'
 import { NAV, type Tab } from '../../type/navigation/navigation'
+import { useLogout } from '../../hooks/useAuth'
+import { useSession } from '../../hooks/useAuth'
 
 interface SidebarProps {
   tab: Tab
@@ -8,6 +10,16 @@ interface SidebarProps {
 
 export function Sidebar({ tab }: SidebarProps) {
   const navigate = useNavigate()
+  const { data: user } = useSession()
+  const logout = useLogout()
+
+  const handleLogout = () => {
+    logout.mutate()
+  }
+
+  const initials = user
+    ? `${user.firstNameUser?.[0] ?? ''}${user.lastNameUser?.[0] ?? ''}`.toUpperCase()
+    : 'AR'
 
   return (
     <nav className="hidden md:flex flex-col fixed top-0 left-0 bottom-0 w-64 bg-card border-r border-border px-4 py-8 z-(--z-nav)">
@@ -41,24 +53,38 @@ export function Sidebar({ tab }: SidebarProps) {
         })}
       </div>
 
-      <div className="mt-auto">
+      <div className="mt-auto space-y-2">
         <button
           type="button"
+          onClick={() => navigate('/settings')}
           className="flex items-center gap-3 w-full px-3 py-3 rounded-xl text-sm font-bold text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
         >
           <Settings size={18} strokeWidth={1.8} />
           Ajustes
         </button>
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={logout.isPending}
+          className="flex items-center gap-3 w-full px-3 py-3 rounded-xl text-sm font-bold text-rose-600 hover:bg-rose-50 transition-all"
+        >
+          <LogOut size={18} strokeWidth={1.8} />
+          Cerrar sesión
+        </button>
+
         <div className="flex items-center gap-3 px-3 py-3 mt-1">
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
             style={{ background: 'var(--gradient-brand)' }}
           >
-            AR
+            {initials}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-bold text-foreground truncate">Andrés R.</p>
-            <p className="text-xs text-muted-foreground truncate">andres@email.com</p>
+            <p className="text-sm font-bold text-foreground truncate">
+              {user?.firstNameUser ?? 'Andrés'} {user?.lastNameUser ?? 'R.'}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">{user?.emailUser ?? 'andres@email.com'}</p>
           </div>
         </div>
       </div>

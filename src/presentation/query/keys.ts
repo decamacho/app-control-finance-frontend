@@ -1,9 +1,27 @@
 export const queryKeys = {
+  auth: {
+    all: ['auth'] as const,
+    session: ['auth', 'session'] as const,
+    sessions: ['auth', 'sessions'] as const,
+    verify: (token: string) => ['auth', 'verify', token] as const,
+  },
+  business: {
+    all: ['business'] as const,
+    list: ['business', 'list'] as const,
+  },
   parking: {
     all: ['parking'] as const,
-    entries: ['parking', 'entries'] as const,
-    entry: (id: string) => ['parking', 'entries', id] as const,
-    vehicles: ['parking', 'vehicles'] as const,
+    rates: (idBusiness: string) => ['parking', idBusiness, 'rates'] as const,
+    vehicles: (idBusiness: string) => ['parking', idBusiness, 'vehicles'] as const,
+    vehicleByPlate: (idBusiness: string, licensePlate: string) => ['parking', idBusiness, 'vehicles', licensePlate] as const,
+    tickets: (idBusiness: string, filters?: { status?: string; licensePlate?: string }) =>
+      ['parking', idBusiness, 'tickets', filters] as const,
+    activeTickets: (idBusiness: string) => ['parking', idBusiness, 'actives'] as const,
+    activeByPlate: (idBusiness: string, licensePlate: string) =>
+      ['parking', idBusiness, 'actives', licensePlate] as const,
+    ticket: (idTicket: string) => ['parking', 'tickets', idTicket] as const,
+    payments: (idTicket: string) => ['parking', idTicket, 'payments'] as const,
+    vehicleMonthly: (idVehicle?: string) => ['parking', 'monthly', idVehicle] as const,
   },
   store: {
     all: ['store'] as const,
