@@ -1,6 +1,7 @@
-import { Bike, Car, Truck, type LucideIcon } from 'lucide-react'
+import { Bike, Car, Truck, UtensilsCrossed, type LucideIcon } from 'lucide-react'
 import type { VehicleType as ApiVehicleType } from '../../../core/domain/entities/api'
 import type { PaymentMethod } from '../../../core/domain/entities/sale'
+import type { OrderStatus, RecurringFrequency } from '../../../core/domain/entities/food'
 
 type DemoVehicleType = 'car' | 'motorcycle' | 'truck'
 
@@ -55,4 +56,33 @@ export const PAYMENT_OPTIONS: [PaymentMethod, string][] = [
   ['efectivo', 'Efectivo'],
   ['nequi', 'Nequi'],
   ['tarjeta', 'Tarjeta'],
+]
+
+export const FOOD_PAYMENT_OPTIONS = [
+  { id: 'NEQUI', label: 'Nequi' },
+  { id: 'CASH', label: 'Efectivo' },
+  { id: 'BREVE', label: 'Breve' },
+  { id: 'LLAVE', label: 'Llave' },
+  { id: 'DEVIPLATA', label: 'Deviplata' },
+  { id: 'OTHER', label: 'Otro' },
+] as const
+
+export type FoodPaymentMethod = (typeof FOOD_PAYMENT_OPTIONS)[number]['id']
+
+export const ORDER_STATUS_MAP: Record<OrderStatus, { label: string; color: string; bg: string }> = {
+  PENDING: { label: 'Pendiente', color: 'text-amber-700', bg: 'bg-amber-50 border-amber-100' },
+  PREPARING: { label: 'En preparación', color: 'text-blue-700', bg: 'bg-blue-50 border-blue-100' },
+  DELIVERED: { label: 'Entregada', color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-100' },
+  CANCELLED: { label: 'Cancelada', color: 'text-rose-700', bg: 'bg-rose-50 border-rose-100' },
+}
+
+export const RECURRING_FREQUENCY_OPTIONS: { id: RecurringFrequency; label: string }[] = [
+  { id: 'DAILY', label: 'Todos los días' },
+  { id: 'WEEKDAYS', label: 'Lunes a viernes' },
+  { id: 'WEEKLY', label: 'Semanal' },
+  { id: 'MONTHLY', label: 'Mensual' },
+]
+
+export const FOOD_ICONS: { id: string; label: string; Icon: LucideIcon }[] = [
+  { id: 'utensils', label: 'General', Icon: UtensilsCrossed },
 ]

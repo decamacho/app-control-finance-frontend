@@ -23,6 +23,10 @@ export default defineConfig({
       '/parking-rates': 'http://localhost:3000',
       '/vehicles': 'http://localhost:3000',
       '/parking-tickets': 'http://localhost:3000',
+      '/products': 'http://localhost:3000',
+      '/customers': 'http://localhost:3000',
+      '/orders': 'http://localhost:3000',
+      '/recurring': 'http://localhost:3000',
     },
   },
 })

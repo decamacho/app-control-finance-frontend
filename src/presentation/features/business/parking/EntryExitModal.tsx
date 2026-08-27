@@ -7,6 +7,7 @@ import { Field } from '../../../components/core/Field'
 import { FormModal } from '../../../components/core/FormModal'
 import { Toggle } from '../../../components/core/Toggle'
 import { inputCls } from '../../../components/core/input'
+import { SelectField } from '../../../components/core/SelectField'
 import {
   useToggleParkingTicket,
   useParkingRates,
@@ -349,16 +350,14 @@ export function EntryExitModal({ open, onClose, idBusiness }: EntryExitModalProp
               )}
 
               <div className="flex gap-2 items-stretch">
-                <select
-                  className={inputCls + ' flex-[3] appearance-none cursor-pointer'}
-                  value={newPaymentMethod}
-                  onChange={(e) => setNewPaymentMethod(e.target.value as PaymentMethod)}
-                >
-                  <option value="" disabled>Medio de pago</option>
-                  {PARKING_PAYMENT_OPTIONS.map((opt) => (
-                    <option key={opt.id} value={opt.id}>{opt.label}</option>
-                  ))}
-                </select>
+                <div className="flex-[3]">
+                  <SelectField
+                    placeholder="Medio de pago"
+                    options={PARKING_PAYMENT_OPTIONS.map((o) => ({ value: o.id, label: o.label }))}
+                    value={newPaymentMethod || undefined}
+                    onChange={(val) => setNewPaymentMethod(val as PaymentMethod)}
+                  />
+                </div>
                 <input
                   type="text"
                   inputMode="numeric"

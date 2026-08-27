@@ -28,4 +28,11 @@ export const queryKeys = {
     products: ['store', 'products'] as const,
     sales: ['store', 'sales'] as const,
   },
+  food: {
+    all: ['food'] as const,
+    products: ['food', 'products'] as const,
+    customers: ['food', 'customers'] as const,
+    todayOrders: ['food', 'orders', 'today'] as const,
+    recurring: ['food', 'recurring'] as const,
+  },
 }

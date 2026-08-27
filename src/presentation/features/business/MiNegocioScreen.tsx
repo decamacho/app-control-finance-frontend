@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Building2 } from 'lucide-react'
 import { BusinessTabs, type BusinessTab } from './BusinessTabs'
 import { ParquederoSection } from './parking/ParquederoSection'
-import { TiendaSection } from './store/TiendaSection'
+import { FoodSection } from './food/FoodSection'
 import { useQuery } from '@tanstack/react-query'
 import { getAccessToken } from '@/infrastructure/api/http-client'
 import { ApiBusinessRepository } from '@/infrastructure/api/api-business.repository'
@@ -36,7 +36,7 @@ export function MiNegocioScreen() {
           <Building2 size={22} className="text-primary" />
           Mi Negocio
         </h1>
-        <p className="text-muted-foreground text-sm mt-0.5">Gestión de parquedero y tienda</p>
+        <p className="text-muted-foreground text-sm mt-0.5">Gestión de parquedero y comidas rápidas</p>
       </div>
 
       <div className="mx-5 mb-5">
@@ -47,7 +47,7 @@ export function MiNegocioScreen() {
         {businessTab === 'parquedero' ? (
           currentBusiness ? <ParquederoSection idBusiness={currentBusiness.idBusiness} /> : null
         ) : (
-          <TiendaSection />
+          <FoodSection />
         )}
       </div>
     </div>

@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import { ChevronDown } from 'lucide-react'
 import type { Product } from '../../../../core/domain/entities/product'
 import type { PaymentMethod } from '../../../../core/domain/entities/sale'
 import { formatMoney } from '../../../../core/domain/value-objects/money'
 import { PAYMENT_OPTIONS } from '../../../type/business/constants'
 import { Field } from '../../../components/core/Field'
 import { FormModal } from '../../../components/core/FormModal'
-import { inputCls } from '../../../components/core/input'
+import { SelectField } from '../../../components/core/SelectField'
 import type { RegisterSaleInput } from '../../../../core/application/register-sale'
 
 interface SaleModalProps {
@@ -33,16 +32,12 @@ export function SaleModal({ open, onClose, onSave, products }: SaleModalProps) {
   return (
     <FormModal open={open} onClose={onClose} title="Registrar venta" ctaLabel="Registrar venta" onSubmit={handleSave}>
       <Field label="Producto">
-        <div className="relative">
-          <select className={inputCls + ' appearance-none pr-8'} value={productId} onChange={(e) => setProductId(e.target.value)}>
-            {products.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} — {formatMoney(p.price)}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-        </div>
+        <SelectField
+          placeholder="Seleccionar producto"
+          options={products.map((p) => ({ value: p.id, label: `${p.name} — ${formatMoney(p.price)}` }))}
+          value={productId || undefined}
+          onChange={(val) => setProductId(val)}
+        />
       </Field>
       <Field label="Cantidad">
         <div className="flex items-center gap-3">

@@ -1,7 +1,7 @@
-import { Car, ShoppingCart } from 'lucide-react'
+import { Car, UtensilsCrossed } from 'lucide-react'
 import { Toggle } from '../../components/core/Toggle'
 
-export type BusinessTab = 'parquedero' | 'tienda'
+export type BusinessTab = 'parquedero' | 'comidas'
 
 interface BusinessTabsProps {
   value: BusinessTab
@@ -14,7 +14,7 @@ export function BusinessTabs({ value, onChange }: BusinessTabsProps) {
       tall
       options={[
         { id: 'parquedero', label: 'Parquedero', Icon: Car },
-        { id: 'tienda', label: 'Tienda', Icon: ShoppingCart },
+        { id: 'comidas', label: 'Comidas', Icon: UtensilsCrossed },
       ]}
       value={value}
       onChange={(tab) => onChange(tab as BusinessTab)}
