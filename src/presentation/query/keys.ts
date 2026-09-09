@@ -1,3 +1,5 @@
+import type { OrderFilters } from '../../core/domain/entities/food'
+
 export const queryKeys = {
   auth: {
     all: ['auth'] as const,
@@ -30,9 +32,15 @@ export const queryKeys = {
   },
   food: {
     all: ['food'] as const,
-    products: ['food', 'products'] as const,
-    customers: ['food', 'customers'] as const,
-    todayOrders: ['food', 'orders', 'today'] as const,
-    recurring: ['food', 'recurring'] as const,
+    products: (idBusiness: string) => ['food', idBusiness, 'products'] as const,
+    customers: (idBusiness: string) => ['food', idBusiness, 'customers'] as const,
+    orders: (idBusiness: string, filters?: OrderFilters) => ['food', idBusiness, 'orders', filters] as const,
+    order: (idOrder: string) => ['food', 'orders', idOrder] as const,
+    orderPayments: (idOrder: string) => ['food', 'orders', idOrder, 'payments'] as const,
+    deliveries: (idOrder: string) => ['food', 'orders', idOrder, 'deliveries'] as const,
+    deliverySummary: (idOrder: string) => ['food', 'orders', idOrder, 'delivery-summary'] as const,
+    customerPrices: (idBusiness: string, idCustomer: string) => ['food', idBusiness, 'customers', idCustomer, 'prices'] as const,
+    recurringByBusiness: (idBusiness: string) => ['food', idBusiness, 'recurring'] as const,
+    summary: (idBusiness: string) => ['food', idBusiness, 'summary'] as const,
   },
 }

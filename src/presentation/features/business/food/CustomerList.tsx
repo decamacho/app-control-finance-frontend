@@ -1,14 +1,17 @@
-import { Pencil, Trash2, Eye, MapPin, Phone } from 'lucide-react'
-import type { FoodCustomer } from '../../../../core/domain/entities/food'
+import { Pencil, Trash2, Eye, MapPin, Phone, RotateCcw, RefreshCw } from 'lucide-react'
+import type { FoodCustomer, RecurringOrder } from '../../../../core/domain/entities/food'
+import { RECURRING_DAY_LABELS } from '../../../../core/domain/entities/food'
 
 interface CustomerListProps {
   customers: FoodCustomer[]
+  recurring?: RecurringOrder[]
   onEdit: (customer: FoodCustomer) => void
   onDelete: (customer: FoodCustomer) => void
   onViewDetail: (customer: FoodCustomer) => void
+  onManageRecurring?: (customer: FoodCustomer) => void
 }
 
-export function CustomerList({ customers, onEdit, onDelete, onViewDetail }: CustomerListProps) {
+export function CustomerList({ customers, recurring, onEdit, onDelete, onViewDetail, onManageRecurring }: CustomerListProps) {
   if (customers.length === 0) {
     return (
       <div className="bg-card border border-border rounded-2xl p-8 text-center">
@@ -20,7 +23,9 @@ export function CustomerList({ customers, onEdit, onDelete, onViewDetail }: Cust
 
   return (
     <div className="space-y-2">
-      {customers.map((customer) => (
+      {customers.map((customer) => {
+        const customerRecurring = recurring?.find((r) => r.idCustomer === customer.idCustomer)
+        return (
         <div key={customer.idCustomer} className="bg-card border border-border rounded-2xl p-4">
           <div className="flex items-start gap-3">
             <div className="flex-1 min-w-0">
@@ -33,11 +38,29 @@ export function CustomerList({ customers, onEdit, onDelete, onViewDetail }: Cust
               <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                 <Phone size={10} /> {customer.phoneCustomer}
               </p>
-              {customer.customPrices && customer.customPrices.length > 0 && (
-                <span className="inline-flex mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100">
-                  {customer.customPrices.length} precio(s) custom
-                </span>
-              )}
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                {customer.customPrices && customer.customPrices.length > 0 && (
+                  <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100">
+                    {customer.customPrices.length} precio(s) custom
+                  </span>
+                )}
+                {customerRecurring ? (
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                    customerRecurring.isActive
+                      ? 'bg-violet-50 text-violet-700 border-violet-100'
+                      : 'bg-muted text-muted-foreground border-border'
+                  }`}>
+                    <RefreshCw size={10} />
+                    {customerRecurring.isActive
+                      ? `Recurrente · ${customerRecurring.recurringDays.map((d) => RECURRING_DAY_LABELS[d].slice(0, 3)).join(', ')} ${customerRecurring.deliveryTime}`
+                      : 'Recurrente inactivo'}
+                  </span>
+                ) : (
+                  <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground border border-border">
+                    Sin recurrencia
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-0.5 shrink-0">
               <button
@@ -48,6 +71,16 @@ export function CustomerList({ customers, onEdit, onDelete, onViewDetail }: Cust
               >
                 <Eye size={14} />
               </button>
+              {onManageRecurring && (
+                <button
+                  type="button"
+                  aria-label={`Gestionar recurrencia de ${customer.nameCustomer}`}
+                  onClick={() => onManageRecurring(customer)}
+                  className="p-2 text-muted-foreground hover:text-violet-600 hover:bg-violet-50 rounded-xl transition-colors cursor-pointer"
+                >
+                  <RotateCcw size={14} />
+                </button>
+              )}
               <button
                 type="button"
                 aria-label={`Editar ${customer.nameCustomer}`}
@@ -67,7 +100,8 @@ export function CustomerList({ customers, onEdit, onDelete, onViewDetail }: Cust
             </div>
           </div>
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

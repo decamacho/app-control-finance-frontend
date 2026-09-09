@@ -17,6 +17,7 @@ export default defineConfig({
     },
   },
   server: {
+    allowedHosts: ['.trycloudflare.com'],
     proxy: {
       '/auth': 'http://localhost:3000',
       '/businesses': 'http://localhost:3000',
@@ -26,7 +27,7 @@ export default defineConfig({
       '/products': 'http://localhost:3000',
       '/customers': 'http://localhost:3000',
       '/orders': 'http://localhost:3000',
-      '/recurring': 'http://localhost:3000',
+      '/product-prices': 'http://localhost:3000',
     },
   },
 })

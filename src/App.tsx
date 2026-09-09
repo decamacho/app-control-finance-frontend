@@ -5,7 +5,7 @@ import { AuthGuard } from './presentation/features/auth/AuthGuard'
 import { Login } from './presentation/features/auth/Login'
 import { Register } from './presentation/features/auth/Register'
 import { VerifyEmail } from './presentation/features/auth/VerifyEmail'
-import { MiNegocioScreen } from './presentation/features/business/MiNegocioScreen'
+import { BusinessScreen } from './presentation/features/business/BusinessScreen'
 import { SettingsScreen } from './presentation/features/settings/SettingsScreen'
 
 function App() {
@@ -26,7 +26,7 @@ function App() {
         <Route path="/wallets" element={<Placeholder label="Billeteras" />} />
         <Route path="/expenses" element={<Placeholder label="Gastos" />} />
         <Route path="/reminders" element={<Placeholder label="Avisos" />} />
-        <Route path="/business" element={<MiNegocioScreen />} />
+        <Route path="/business" element={<BusinessScreen />} />
         <Route path="/settings" element={<SettingsScreen />} />
       </Route>
 

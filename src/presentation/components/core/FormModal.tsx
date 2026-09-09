@@ -23,7 +23,7 @@ export function FormModal({ open, onClose, title, ctaLabel, onSubmit, submitting
           <button
             type="button"
             onClick={onClose}
-            className="w-full md:w-auto py-3 md:px-6 rounded-2xl font-bold text-sm text-muted-foreground bg-muted hover:bg-secondary transition-colors cursor-pointer"
+            className="w-full md:w-auto py-4 md:px-6 rounded-2xl font-bold text-sm text-foreground bg-muted hover:bg-secondary transition-colors cursor-pointer"
           >
             Cancelar
           </button>

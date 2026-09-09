@@ -6,6 +6,7 @@ import { useRegisterOrderPayments } from '../../../hooks/useFoodQuery'
 
 const PAYMENT_METHODS = [
   { id: 'NEQUI', label: 'Nequi', icon: Smartphone, color: 'text-fuchsia-500', bg: 'bg-fuchsia-50' },
+  { id: 'DEVIPLATA', label: 'Deviplata', icon: Smartphone, color: 'text-violet-500', bg: 'bg-violet-50' },
   { id: 'CASH', label: 'Efectivo', icon: Banknote, color: 'text-emerald-500', bg: 'bg-emerald-50' },
   { id: 'BREVE', label: 'Breve', icon: Receipt, color: 'text-amber-500', bg: 'bg-amber-50' },
   { id: 'LLAVE', label: 'Llave', icon: CreditCard, color: 'text-blue-500', bg: 'bg-blue-50' },
@@ -28,7 +29,7 @@ export function FoodPaymentsModal({ open, onClose, idOrder, totalAmount, pending
   })
   const [localError, setLocalError] = useState<string | null>(null)
 
-  const { mutate: registerPayments } = useRegisterOrderPayments()
+  const { mutate: registerPayments, isPending } = useRegisterOrderPayments()
 
   const paid = PAYMENT_METHODS.reduce((sum, m) => sum + amounts[m.id], 0)
   const remaining = Math.max(0, pendingAmount - paid)
@@ -57,6 +58,7 @@ export function FoodPaymentsModal({ open, onClose, idOrder, totalAmount, pending
       title="Registrar pagos"
       ctaLabel={isComplete ? 'Confirmar pagos' : 'Agregar pagos'}
       onSubmit={handleSave}
+      submitting={isPending}
     >
       {localError && (
         <p className="bg-rose-50 text-rose-700 border border-rose-100 rounded-xl p-3 text-sm mb-5">{localError}</p>
@@ -97,6 +99,21 @@ export function FoodPaymentsModal({ open, onClose, idOrder, totalAmount, pending
           </div>
         ))}
       </div>
+
+      {paid > 0 && (
+        <div className="bg-secondary rounded-2xl p-3 mb-4">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Suma de pagos</span>
+            <span className="text-sm font-mono font-bold text-foreground">{formatMoney(paid)}</span>
+          </div>
+          {remaining > 0 && (
+            <div className="flex justify-between items-center mt-1">
+              <span className="text-sm text-muted-foreground">Restante</span>
+              <span className="text-sm font-mono font-bold text-rose-600">{formatMoney(remaining)}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {isComplete && (
         <div className="bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-2xl px-4 py-3 text-sm font-bold flex items-center justify-center gap-2">

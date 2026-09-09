@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { FoodProduct, CreateProductInput } from '../../../../core/domain/entities/food'
 import { formatMoney } from '../../../../core/domain/value-objects/money'
+import { useResetOnOpen } from '../../../hooks/useResetOnOpen'
 import { Field } from '../../../components/core/Field'
 import { FormModal } from '../../../components/core/FormModal'
 import { inputCls } from '../../../components/core/input'
@@ -17,17 +18,16 @@ export function ProductModal({ open, onClose, initial, onSave }: ProductModalPro
   const [price, setPrice] = useState('')
   const [localError, setLocalError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (open && initial) {
+  useResetOnOpen(open, () => {
+    if (initial) {
       setName(initial.nameProduct)
       setPrice(String(initial.basePrice))
-      setLocalError(null)
-    } else if (open && !initial) {
+    } else {
       setName('')
       setPrice('')
-      setLocalError(null)
     }
-  }, [open, initial])
+    setLocalError(null)
+  })
 
   const handleSave = () => {
     const trimmed = name.trim()

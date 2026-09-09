@@ -20,7 +20,7 @@ function useBusinesses() {
   })
 }
 
-export function MiNegocioScreen() {
+export function BusinessScreen() {
   const [businessTab, setBusinessTab] = useState<BusinessTab>('parquedero')
   const { data: businesses } = useBusinesses()
 
@@ -34,9 +34,9 @@ export function MiNegocioScreen() {
       <div className="px-5 pt-7 pb-4">
         <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
           <Building2 size={22} className="text-primary" />
-          Mi Negocio
+          Business
         </h1>
-        <p className="text-muted-foreground text-sm mt-0.5">Gestión de parquedero y comidas rápidas</p>
+        <p className="text-muted-foreground text-sm mt-0.5">Gestión de parquedero y comida rápida</p>
       </div>
 
       <div className="mx-5 mb-5">
@@ -47,7 +47,7 @@ export function MiNegocioScreen() {
         {businessTab === 'parquedero' ? (
           currentBusiness ? <ParquederoSection idBusiness={currentBusiness.idBusiness} /> : null
         ) : (
-          <FoodSection />
+          <FoodSection idBusiness={currentBusiness?.idBusiness} />
         )}
       </div>
     </div>
