@@ -21,8 +21,9 @@ function shiftDay(value: string | undefined, days: number): string {
 
 export function OrderFiltersBar({ filters, onChange }: OrderFiltersBarProps) {
   const today = toDateStr(new Date())
-  const current = filters.date && filters.date <= today ? filters.date : today
-  const canNext = current < today
+  const tomorrow = shiftDay(today, 1)
+  const current = filters.date && filters.date <= tomorrow ? filters.date : today
+  const canNext = current < tomorrow
 
   const prevDay = () => {
     onChange({ ...filters, date: shiftDay(current, -1) })
@@ -47,7 +48,7 @@ export function OrderFiltersBar({ filters, onChange }: OrderFiltersBarProps) {
         </button>
         <input
           type="date"
-          max={today}
+          max={tomorrow}
           value={current}
           onChange={(e) => onChange({ ...filters, date: e.target.value || undefined })}
           className="flex-1 min-w-0 bg-card border border-border rounded-xl px-3 py-2 text-sm text-foreground outline-none focus:border-primary transition-colors"

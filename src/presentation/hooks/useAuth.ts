@@ -37,7 +37,7 @@ export function useLogin() {
     onSuccess: (result) => {
       setAccessToken(result.accessToken)
       queryClient.setQueryData<AuthUser | null>(queryKeys.auth.session, result.user)
-      navigate('/')
+      navigate('/business')
     },
   })
 }
