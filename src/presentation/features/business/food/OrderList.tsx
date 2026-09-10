@@ -32,56 +32,62 @@ export function OrderList({ orders, onViewDetail }: OrderListProps) {
               .join(', ')
           : (order.description ?? '')
         const title = order.customer?.nameCustomer ?? (order.orderType === 'EXPENSE' ? order.description ?? 'Gasto' : 'Sin cliente')
+        const isPaid = order.orderType !== 'EXPENSE' && order.paymentStatus === 'PAID'
 
         return (
-          <button
-            key={order.idOrder}
-            type="button"
-            onClick={() => onViewDetail(order)}
-            className="w-full flex items-center gap-3 bg-card border border-border rounded-2xl p-4 text-left active:scale-[0.99] transition-all hover:border-primary/50 hover:shadow-sm cursor-pointer"
-          >
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className={`inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold border ${typeConfig.bg} ${typeConfig.color}`}>
-                  {typeConfig.label}
-                </span>
-                <span className="text-sm font-bold text-foreground truncate">{title}</span>
-                {order.idRecurringOrder && (
-                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-violet-50 text-violet-600 border border-violet-100">
-                    <RotateCcw size={9} /> Recurrente
-                  </span>
+<button
+          key={order.idOrder}
+          type="button"
+          onClick={() => onViewDetail(order)}
+          className="w-full flex items-center gap-3 bg-card border border-border rounded-2xl p-4 text-left active:scale-[0.99] transition-all hover:border-primary/50 hover:shadow-sm cursor-pointer"
+        >
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start gap-2">
+              <span className={`inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold border shrink-0 ${typeConfig.bg} ${typeConfig.color}`}>
+                {typeConfig.label}
+              </span>
+              <span className="text-sm font-bold text-foreground truncate flex-1 min-w-0 leading-[1.55]">{title}</span>
+              <div className="text-right shrink-0">
+                <p className={`text-sm font-mono font-bold ${order.orderType === 'EXPENSE' ? 'text-rose-600' : isPaid ? 'text-emerald-600' : 'text-foreground'}`}>{order.orderType === 'EXPENSE' ? `- ${formatMoney(order.totalAmount)}` : formatMoney(order.totalAmount)}</p>
+                <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                  {new Date(order.deliveryTime).toLocaleString('es-CO', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}
+                </p>
+                {order.orderType !== 'EXPENSE' && order.pendingAmount > 0 && (
+                  <p className="text-[10px] text-rose-500 font-mono mt-0.5">Pend: {formatMoney(order.pendingAmount)}</p>
                 )}
               </div>
-              {itemsSummary && (
-                <p className="text-xs text-muted-foreground truncate">{itemsSummary}</p>
-              )}
-              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+            </div>
+
+            {(order.hasRecurringOrder ?? order.recurringOrder?.idRecurringOrder ?? order.idRecurringOrder) && (
+              <span className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-violet-50 text-violet-600 border border-violet-100 my-1.5 w-full md:w-auto">
+                <RotateCcw size={9} /> Recurrente
+              </span>
+            )}
+
+            {itemsSummary && (
+              <p className="text-xs text-muted-foreground truncate mt-1">{itemsSummary}</p>
+            )}
+
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              {order.statusOrder === 'CANCELLED' && (
                 <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusConfig.bg} ${statusConfig.color}`}>
                   {statusConfig.label}
                 </span>
-                {order.orderType !== 'EXPENSE' && (
-                  <>
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${paymentConfig.bg} ${paymentConfig.color}`}>
-                      {paymentConfig.label}
-                    </span>
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${deliveryConfig.bg} ${deliveryConfig.color}`}>
-                      {deliveryConfig.label}
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-            <div className="text-right shrink-0">
-              <p className="text-sm font-mono font-bold text-foreground">{order.orderType === 'EXPENSE' ? `- ${formatMoney(order.totalAmount)}` : formatMoney(order.totalAmount)}</p>
-              {order.orderType !== 'EXPENSE' && order.pendingAmount > 0 && (
-                <p className="text-[10px] text-rose-500 font-mono mt-0.5">Pend: {formatMoney(order.pendingAmount)}</p>
               )}
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                {new Date(order.deliveryTime).toLocaleString('es-CO', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}
-              </p>
+              {order.orderType !== 'EXPENSE' && (
+                <>
+                  <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${paymentConfig.bg} ${paymentConfig.color}`}>
+                    {paymentConfig.label}
+                  </span>
+                  <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${deliveryConfig.bg} ${deliveryConfig.color}`}>
+                    {deliveryConfig.label}
+                  </span>
+                </>
+              )}
             </div>
-            <ChevronRight size={16} className="text-muted-foreground shrink-0" />
-          </button>
+          </div>
+          <ChevronRight size={16} className="text-muted-foreground shrink-0" />
+        </button>
         )
       })}
     </div>

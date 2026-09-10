@@ -84,42 +84,54 @@ export function Register() {
 
   return (
     <AuthLayout title="Crea tu cuenta" subtitle="Regístrate con tu correo electrónico">
-      <Field label="Nombre">
-        <input
-          className={inputCls}
-          placeholder="Tu nombre"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-      </Field>
+      <form noValidate onSubmit={(e) => { e.preventDefault(); handleSubmit() }}>
+        <Field label="Nombre">
+          <input
+            className={inputCls}
+            name="name"
+            autoComplete="name"
+            placeholder="Tu nombre"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </Field>
 
-      <Field label="Correo electrónico">
-        <input
-          type="email"
-          className={inputCls}
-          placeholder="tucorreo@ejemplo.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-      </Field>
+        <Field label="Correo electrónico">
+          <input
+            type="email"
+            className={inputCls}
+            name="email"
+            autoComplete="email"
+            placeholder="tucorreo@ejemplo.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </Field>
 
-      <Field label="Contraseña">
-        <PasswordField value={password} onChange={setPassword} />
-        <p className="text-xs text-muted-foreground mt-2">Mínimo 8 caracteres</p>
-      </Field>
+        <Field label="Contraseña">
+          <PasswordField value={password} onChange={setPassword} name="new-password" autoComplete="new-password" />
+          <p className="text-xs text-muted-foreground mt-2">Mínimo 8 caracteres</p>
+        </Field>
 
-      <Field label="Confirmar contraseña">
-        <PasswordField value={confirmPassword} onChange={setConfirmPassword} placeholder="••••••••" />
-      </Field>
+        <Field label="Confirmar contraseña">
+          <PasswordField
+            value={confirmPassword}
+            onChange={setConfirmPassword}
+            placeholder="••••••••"
+            name="confirm-password"
+            autoComplete="new-password"
+          />
+        </Field>
 
-      {showError && (
-        <p className="bg-rose-50 text-rose-700 border border-rose-100 rounded-xl p-3 text-sm mb-5">{showError}</p>
-      )}
+        {showError && (
+          <p className="bg-rose-50 text-rose-700 border border-rose-100 rounded-xl p-3 text-sm mb-5">{showError}</p>
+        )}
 
-      <PrimaryButton onClick={handleSubmit} disabled={register.isPending} className={register.isPending ? 'opacity-50' : ''}>
-        {register.isPending ? <Loader2 size={18} className="animate-spin" /> : null}
-        Crear cuenta
-      </PrimaryButton>
+        <PrimaryButton type="submit" onClick={handleSubmit} disabled={register.isPending} className={register.isPending ? 'opacity-50' : ''}>
+          {register.isPending ? <Loader2 size={18} className="animate-spin" /> : null}
+          Crear cuenta
+        </PrimaryButton>
+      </form>
 
       <p className="text-sm text-muted-foreground text-center mt-5">
         ¿Ya tienes cuenta?{' '}

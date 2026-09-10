@@ -16,7 +16,7 @@ import type {
   CreateDeliveryInput,
   CreateCustomerProductPriceInput,
   OrderFilters,
-  DaySummary,
+  DaySummaryResponse,
 } from '../domain/entities/food'
 
 export interface FoodRepository {
@@ -35,7 +35,7 @@ export interface FoodRepository {
   createOrder(input: CreateOrderInput): Promise<FoodOrder>
   updateOrder(id: string, input: UpdateOrderInput): Promise<FoodOrder>
   cancelOrder(id: string): Promise<FoodOrder>
-  getDailySummary(idBusiness: string): Promise<DaySummary>
+  getDailySummaryByCustomers(idBusiness: string, date?: string): Promise<DaySummaryResponse>
 
   listOrderPayments(idOrder: string): Promise<FoodPayment[]>
   registerOrderPayments(idOrder: string, input: RegisterOrderPaymentsInput): Promise<{ payments: FoodPayment[]; order: { idOrder: string; paidAmount: number; pendingAmount: number; paymentStatus: string } }>

@@ -95,10 +95,15 @@ export function useCloseSession() {
 
 export function useCloseAllSessions() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
+
   return useMutation({
     mutationFn: () => authRepository.closeAllSessions(),
     onSuccess: () => {
-      queryClient.setQueryData(queryKeys.auth.sessions, [])
+      setAccessToken(null)
+      queryClient.setQueryData<AuthUser | null>(queryKeys.auth.session, null)
+      queryClient.removeQueries({ queryKey: queryKeys.auth.sessions })
+      navigate('/login', { replace: true })
     },
   })
 }

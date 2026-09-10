@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { Plus, UtensilsCrossed, ReceiptText } from 'lucide-react'
+import { Plus, UtensilsCrossed, ReceiptText, ClipboardCopy } from 'lucide-react'
+import { App as AntApp } from 'antd'
+import { getErrorMessage } from '../../../../infrastructure/api/http-client'
 import type { FoodOrder, FoodProduct, FoodCustomer, OrderFilters } from '../../../../core/domain/entities/food'
 import { formatMoney } from '../../../../core/domain/value-objects/money'
 import {
@@ -7,7 +9,7 @@ import {
   useFoodCustomers,
   useFoodOrders,
   useFoodRecurringByBusiness,
-  useDailySummary,
+  useDailySummaryByCustomers,
   useCreateFoodProduct,
   useUpdateFoodProduct,
   useDeleteFoodProduct,
@@ -35,18 +37,35 @@ import { FoodPaymentsModal } from './FoodPaymentsModal'
 import { OrderFiltersBar } from './OrderFilters'
 import { OrderDetailModal } from './OrderDetailModal'
 import { ExpenseModal } from './ExpenseModal'
+import { DaySummaryModal } from './DaySummaryModal'
 
 const EMPTY_ORDERS: FoodOrder[] = []
 const EMPTY_PRODUCTS: FoodProduct[] = []
 const EMPTY_CUSTOMERS: FoodCustomer[] = []
+
+function todayStr(): string {
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+}
+
+function orderTime(order: FoodOrder): number {
+  for (const value of [order.deliveryTime, order.createdAt, order.lastCreatedAt]) {
+    if (!value) continue
+    const time = new Date(value).getTime()
+    if (!Number.isNaN(time)) return time
+  }
+  return 0
+}
 
 interface FoodSectionProps {
   idBusiness?: string
 }
 
 export function FoodSection({ idBusiness }: FoodSectionProps) {
+  const { message } = AntApp.useApp()
   const [activeTab, setActiveTab] = useState<FoodTab>('pedidos')
-  const [orderFilters, setOrderFilters] = useState<OrderFilters>({})
+  const [orderFilters, setOrderFilters] = useState<OrderFilters>({ date: todayStr() })
 
   const productsQuery = useFoodProducts(idBusiness)
   const customersQuery = useFoodCustomers(idBusiness)
@@ -55,7 +74,7 @@ export function FoodSection({ idBusiness }: FoodSectionProps) {
     activeTab === 'pedidos' ? orderFilters : undefined
   )
   const recurringQuery = useFoodRecurringByBusiness(idBusiness)
-  const summaryQuery = useDailySummary(idBusiness)
+  const summaryQuery = useDailySummaryByCustomers(idBusiness, orderFilters.date)
 
   const createProduct = useCreateFoodProduct(idBusiness)
   const updateProduct = useUpdateFoodProduct(idBusiness)
@@ -70,8 +89,11 @@ export function FoodSection({ idBusiness }: FoodSectionProps) {
 
   const products = productsQuery.data ?? EMPTY_PRODUCTS
   const customers = customersQuery.data ?? EMPTY_CUSTOMERS
-  const orders = ordersQuery.data ?? EMPTY_ORDERS
+  const orders = (ordersQuery.data ?? EMPTY_ORDERS)
+    .slice()
+    .sort((a, b) => orderTime(b) - orderTime(a))
   const recurring = recurringQuery.data ?? []
+  const summaryCustomers = summaryQuery.data?.customers ?? []
 
   const [showProductModal, setShowProductModal] = useState(false)
   const [editProduct, setEditProduct] = useState<FoodProduct | null>(null)
@@ -83,11 +105,17 @@ export function FoodSection({ idBusiness }: FoodSectionProps) {
   const [detailOrder, setDetailOrder] = useState<FoodOrder | null>(null)
   const [editOrder, setEditOrder] = useState<FoodOrder | null>(null)
   const [registerDelivery, setRegisterDelivery] = useState<FoodOrder | null>(null)
-  const [showPayments, setShowPayments] = useState<{ idOrder: string; totalAmount: number; pendingAmount: number } | null>(null)
+  const [showPayments, setShowPayments] = useState<{ idOrder: string; totalAmount: number; pendingAmount: number; orderDate: string } | null>(null)
   const [cancelTarget, setCancelTarget] = useState<FoodOrder | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<FoodOrder | null>(null)
   const [recurringCustomer, setRecurringCustomer] = useState<FoodCustomer | null>(null)
+  const [showDaySummary, setShowDaySummary] = useState(false)
 
-  const summary = summaryQuery.data
+  const summary = summaryQuery.data?.summary
+
+  const pendingPaymentCount = summaryCustomers.filter((c) => c.paymentStatus === 'PENDING').length
+  const partialPaymentCount = summaryCustomers.filter((c) => c.paymentStatus === 'PARTIAL').length
+  const notDeliveredCount = summaryCustomers.filter((c) => c.deliveryStatus === 'NOT_DELIVERED').length
 
   return (
     <div>
@@ -103,8 +131,18 @@ export function FoodSection({ idBusiness }: FoodSectionProps) {
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Saldo del día</p>
             <p className="text-2xl font-mono font-bold text-foreground mt-1">{formatMoney(summary?.net ?? 0)}</p>
           </div>
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'var(--gradient-brand)' }}>
-            <UtensilsCrossed size={22} className="text-white" />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="Ver y copiar resumen del día"
+              onClick={() => setShowDaySummary(true)}
+              className="w-12 h-12 rounded-2xl bg-secondary flex items-center justify-center text-primary hover:bg-secondary/80 transition-colors cursor-pointer shrink-0"
+            >
+              <ClipboardCopy size={20} />
+            </button>
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'var(--gradient-brand)' }}>
+              <UtensilsCrossed size={22} className="text-white" />
+            </div>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border">
@@ -117,9 +155,28 @@ export function FoodSection({ idBusiness }: FoodSectionProps) {
             <p className="text-sm font-mono font-bold text-rose-600">{summary ? formatMoney(summary.expenses) : '—'}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Clientes</p>
-            <p className="text-sm font-mono font-bold">{customers.length}</p>
+            <p className="text-xs text-muted-foreground">Efectivo</p>
+            <p className="text-sm font-mono font-bold">{summary ? formatMoney(summary.cash) : '—'}</p>
           </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Otros medios</p>
+            <p className="text-sm font-mono font-bold">{summary ? formatMoney(summary.otherPayment) : '—'}</p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-border">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-secondary text-muted-foreground">
+            Pedidos: {customers.length}
+          </span>
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-100">
+            Por cobrar: {pendingPaymentCount}
+          </span>
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100">
+            Pago parcial: {partialPaymentCount}
+          </span>
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+            Sin entregar: {notDeliveredCount}
+          </span>
         </div>
       </div>
 
@@ -203,7 +260,7 @@ export function FoodSection({ idBusiness }: FoodSectionProps) {
               }}
               onViewDetail={(c) => setDetailCustomer(c)}
               onManageRecurring={(c) => {
-                const has = recurring.some((r) => r.idCustomer === c.idCustomer)
+                const has = recurring.some((r) => (r.customer?.idCustomer ?? r.idCustomer) === c.idCustomer)
                 if (has) setDetailCustomer(c)
                 else setRecurringCustomer(c)
               }}
@@ -212,7 +269,7 @@ export function FoodSection({ idBusiness }: FoodSectionProps) {
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sticky bottom-24 md:bottom-4 -mx-5 px-5 pt-3 pb-2 bg-background border-t border-border shadow-[0_-8px_16px_-8px_rgba(0,0,0,0.06)] md:hidden">
+      <div className="grid grid-cols-2 gap-2 fixed left-0 right-0 bottom-(--h-nav) px-5 pt-3 pb-2 bg-background/60 backdrop-blur-sm shadow-[0_-8px_16px_-8px_rgba(0,0,0,0.06)] md:hidden">
         <button
           type="button"
           onClick={() => setShowOrderModal(true)}
@@ -230,6 +287,8 @@ export function FoodSection({ idBusiness }: FoodSectionProps) {
           Gasto
         </button>
       </div>
+
+      <div className="h-6 md:hidden" aria-hidden="true" />
 
       <ProductModal
         open={showProductModal}
@@ -267,8 +326,18 @@ export function FoodSection({ idBusiness }: FoodSectionProps) {
         onClose={() => setShowOrderModal(false)}
         products={products}
         customers={customers}
+        existingRecurring={recurring}
         idBusiness={idBusiness}
-        onSave={(input) => { createOrder.mutate(input); setShowOrderModal(false) }}
+        submitting={createOrder.isPending}
+        onSave={(input) => {
+          createOrder.mutate(input, {
+            onSuccess: () => {
+              message.success('Pedido creado')
+              setShowOrderModal(false)
+            },
+            onError: (error) => message.error(getErrorMessage(error)),
+          })
+        }}
       />
       <OrderDetailModal
         open={!!detailOrder}
@@ -276,7 +345,7 @@ export function FoodSection({ idBusiness }: FoodSectionProps) {
         order={detailOrder}
         onPay={(order) => {
           setDetailOrder(null)
-          setShowPayments({ idOrder: order.idOrder, totalAmount: order.totalAmount, pendingAmount: order.pendingAmount })
+          setShowPayments({ idOrder: order.idOrder, totalAmount: order.totalAmount, pendingAmount: order.pendingAmount, orderDate: (order.deliveryTime ?? '').slice(0, 10) || todayStr() })
         }}
         onCancel={(id) => setCancelTarget(orders.find((o) => o.idOrder === id) ?? null)}
         onRegisterDelivery={(order) => {
@@ -287,6 +356,7 @@ export function FoodSection({ idBusiness }: FoodSectionProps) {
           setDetailOrder(null)
           setEditOrder(order)
         }}
+        onDelete={(order) => setDeleteTarget(order)}
       />
       <OrderEditModal
         open={!!editOrder}
@@ -299,7 +369,16 @@ export function FoodSection({ idBusiness }: FoodSectionProps) {
         open={showExpenseModal}
         onClose={() => setShowExpenseModal(false)}
         idBusiness={idBusiness}
-        onSave={(input) => { createOrder.mutate(input); setShowExpenseModal(false) }}
+        submitting={createOrder.isPending}
+        onSave={(input) => {
+          createOrder.mutate(input, {
+            onSuccess: () => {
+              message.success('Gasto registrado')
+              setShowExpenseModal(false)
+            },
+            onError: (error) => message.error(getErrorMessage(error)),
+          })
+        }}
       />
       <DeliveryModal
         open={!!registerDelivery}
@@ -312,15 +391,25 @@ export function FoodSection({ idBusiness }: FoodSectionProps) {
         idOrder={showPayments?.idOrder ?? ''}
         totalAmount={showPayments?.totalAmount ?? 0}
         pendingAmount={showPayments?.pendingAmount ?? 0}
+        orderDate={showPayments?.orderDate ?? ''}
       />
       <RecurringModal
         open={!!recurringCustomer}
         onClose={() => setRecurringCustomer(null)}
         products={products}
         customers={recurringCustomer ? [recurringCustomer] : []}
-        existingRecurring={recurring.filter((r) => r.idCustomer === recurringCustomer?.idCustomer)}
+        existingRecurring={recurring.filter((r) => (r.customer?.idCustomer ?? r.idCustomer) === recurringCustomer?.idCustomer)}
         idBusiness={idBusiness}
-        onSave={(input) => { createRecurring.mutate(input); setRecurringCustomer(null) }}
+        submitting={createRecurring.isPending}
+        onSave={(input) => {
+          createRecurring.mutate(input, {
+            onSuccess: () => {
+              message.success('Pedido recurrente creado')
+              setRecurringCustomer(null)
+            },
+            onError: (error) => message.error(getErrorMessage(error)),
+          })
+        }}
       />
       <CustomerDetailModal
         open={!!detailCustomer}
@@ -336,6 +425,11 @@ export function FoodSection({ idBusiness }: FoodSectionProps) {
         onToggleRecurring={(idRecurringOrder, active) =>
           toggleRecurring.mutate({ idOrder: idRecurringOrder, idRecurringOrder, active })
         }
+      />
+      <DaySummaryModal
+        open={showDaySummary}
+        onClose={() => setShowDaySummary(false)}
+        summary={summaryQuery.data}
       />
       <ConfirmModal
         open={!!cancelTarget}
@@ -354,6 +448,24 @@ export function FoodSection({ idBusiness }: FoodSectionProps) {
           </>
         }
         confirmLabel="Si, cancelar"
+      />
+      <ConfirmModal
+        open={!!deleteTarget}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) cancelOrder.mutate(deleteTarget.idOrder)
+          setDeleteTarget(null)
+          setDetailOrder(null)
+        }}
+        title="Eliminar pedido"
+        message={
+          <>
+            ¿Estás seguro de eliminar el pedido de{' '}
+            <span className="font-bold">{deleteTarget?.customer?.nameCustomer ?? 'este cliente'}</span> por{' '}
+            <span className="font-bold font-mono">{deleteTarget ? formatMoney(deleteTarget.totalAmount) : ''}</span>?
+          </>
+        }
+        confirmLabel="Sí, eliminar"
       />
     </div>
   )

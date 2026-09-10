@@ -19,38 +19,52 @@ export function Login() {
   const login = useLogin()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [localError, setLocalError] = useState<string | null>(null)
 
   const handleSubmit = () => {
-    if (!email.trim() || !password) return
+    if (!email.trim() || !password) {
+      setLocalError('Ingresa tu correo y contraseña para iniciar sesión')
+      return
+    }
+    setLocalError(null)
     login.mutate({ emailUser: email.trim(), passwordUser: password })
   }
 
   return (
     <AuthLayout title="Inicia sesión" subtitle="Accede a tu control financiero">
-      <Field label="Correo electrónico">
-        <input
-          type="email"
-          className={inputCls}
-          placeholder="tucorreo@ejemplo.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-      </Field>
+      <form noValidate onSubmit={(e) => { e.preventDefault(); handleSubmit() }}>
+        <Field label="Correo electrónico">
+          <input
+            type="email"
+            name="email"
+            autoComplete="email"
+            className={inputCls}
+            placeholder="tucorreo@ejemplo.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </Field>
 
-      <Field label="Contraseña">
-        <PasswordField value={password} onChange={setPassword} />
-      </Field>
+        <Field label="Contraseña">
+          <PasswordField
+            value={password}
+            onChange={setPassword}
+            name="password"
+            autoComplete="current-password"
+          />
+        </Field>
 
-      {login.isError && (
-        <p className="bg-rose-50 text-rose-700 border border-rose-100 rounded-xl p-3 text-sm mb-5">
-          {getErrorMessage(login.error)}
-        </p>
-      )}
+        {(localError || login.isError) && (
+          <p className="bg-rose-50 text-rose-700 border border-rose-100 rounded-xl p-3 text-sm mb-5">
+            {localError ?? getErrorMessage(login.error)}
+          </p>
+        )}
 
-      <PrimaryButton onClick={handleSubmit} disabled={login.isPending} className={login.isPending ? 'opacity-50' : ''}>
-        {login.isPending ? <Loader2 size={18} className="animate-spin" /> : null}
-        Iniciar sesión
-      </PrimaryButton>
+        <PrimaryButton type="submit" onClick={handleSubmit} disabled={login.isPending} className={login.isPending ? 'opacity-50' : ''}>
+          {login.isPending ? <Loader2 size={18} className="animate-spin" /> : null}
+          Iniciar sesión
+        </PrimaryButton>
+      </form>
 
       <p className="text-sm text-muted-foreground text-center mt-5">
         ¿No tienes cuenta?{' '}

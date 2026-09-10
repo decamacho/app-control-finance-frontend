@@ -61,12 +61,16 @@ export interface FoodOrder {
   deliveries: FoodDelivery[]
   idRecurringOrder: string | null
   recurringOrder?: RecurringOrder | null
+  hasRecurringOrder?: boolean
+  createdAt?: string | null
+  lastCreatedAt?: string | null
 }
 
 export interface FoodPayment {
   idPayment: string
   amount: number
   paymentMethod: PaymentMethod
+  paymentDate?: string | null
   createdAt?: string
 }
 
@@ -120,6 +124,7 @@ export interface OrderFilters {
   paymentStatus?: string
   deliveryStatus?: string
   orderType?: OrderType
+  date?: string
 }
 
 export interface CreateProductInput {
@@ -156,10 +161,38 @@ export interface CreateOrderInput {
 export interface DaySummary {
   date: string
   received: number
+  cash: number
+  otherPayment: number
   expenses: number
   net: number
   salesCount: number
   expensesCount: number
+}
+
+export interface DaySummaryCustomerItem {
+  idProduct: string
+  nameProduct: string
+  quantity: number
+}
+
+export interface DaySummaryCustomer {
+  idCustomer: string
+  nameCustomer: string
+  total: number
+  paid: number
+  owed: number
+  paymentStatus: string
+  paymentLabel: string
+  deliveryStatus: string
+  deliveryLabel: string
+  items: DaySummaryCustomerItem[]
+  pendingDeliveryItems: DaySummaryCustomerItem[]
+}
+
+export interface DaySummaryResponse {
+  date: string
+  summary: Omit<DaySummary, 'date'>
+  customers: DaySummaryCustomer[]
 }
 
 export interface UpdateOrderInput {
@@ -169,6 +202,7 @@ export interface UpdateOrderInput {
 
 export interface RegisterOrderPaymentsInput {
   payments: Array<{ amount: number; paymentMethod: PaymentMethod }>
+  paymentDate?: string | null
 }
 
 export interface CreateRecurringInput {

@@ -6,9 +6,11 @@ interface PasswordFieldProps {
   value: string
   onChange: (value: string) => void
   placeholder?: string
+  name?: string
+  autoComplete?: string
 }
 
-export function PasswordField({ value, onChange, placeholder = '••••••••' }: PasswordFieldProps) {
+export function PasswordField({ value, onChange, placeholder = '••••••••', name, autoComplete }: PasswordFieldProps) {
   const [visible, setVisible] = useState(false)
 
   return (
@@ -19,6 +21,8 @@ export function PasswordField({ value, onChange, placeholder = '•••••�
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        name={name}
+        autoComplete={autoComplete}
       />
       <button
         type="button"

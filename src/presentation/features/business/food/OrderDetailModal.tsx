@@ -1,11 +1,16 @@
 import { useState } from 'react'
-import { Package, Truck, Wallet, Ban, Calendar, Pencil, ReceiptText } from 'lucide-react'
+import { Package, Truck, Wallet, Ban, Calendar, Pencil, ReceiptText, Trash2 } from 'lucide-react'
 import type { FoodOrder } from '../../../../core/domain/entities/food'
 import { formatMoney } from '../../../../core/domain/value-objects/money'
 import { ORDER_STATUS_MAP, PAYMENT_STATUS_MAP, DELIVERY_STATUS_MAP, ORDER_TYPE_MAP, FOOD_PAYMENT_METHOD_LABELS } from '../../../type/business/constants'
 import { Modal } from '../../../components/core/Modal'
 import { useDeliverySummary, useOrderPayments } from '../../../hooks/useFoodQuery'
 import { DeliverySummary } from './DeliverySummary'
+
+function formatPaymentDate(value: string): string {
+  const normalized = value.includes('T') || value.includes(' ') ? value : `${value}T12:00:00`
+  return new Date(normalized).toLocaleDateString('es-CO', { dateStyle: 'medium' })
+}
 
 interface OrderDetailModalProps {
   open: boolean
@@ -15,9 +20,10 @@ interface OrderDetailModalProps {
   onCancel: (id: string) => void
   onRegisterDelivery: (order: FoodOrder) => void
   onEdit: (order: FoodOrder) => void
+  onDelete?: (order: FoodOrder) => void
 }
 
-export function OrderDetailModal({ open, onClose, order, onPay, onCancel, onRegisterDelivery, onEdit }: OrderDetailModalProps) {
+export function OrderDetailModal({ open, onClose, order, onPay, onCancel, onRegisterDelivery, onEdit, onDelete }: OrderDetailModalProps) {
   const [showDeliverySummary, setShowDeliverySummary] = useState(false)
   const summaryQuery = useDeliverySummary(order?.idOrder)
   const paymentsQuery = useOrderPayments(order?.idOrder)
@@ -263,6 +269,11 @@ export function OrderDetailModal({ open, onClose, order, onPay, onCancel, onRegi
                       <Wallet size={14} className="text-muted-foreground shrink-0" />
                       <div className="flex-1">
                         <p className="text-sm text-foreground font-mono">{formatMoney(payment.amount)}</p>
+                        {payment.paymentDate && (
+                          <p className="text-[10px] text-primary font-bold">
+                            Fecha de pago: {formatPaymentDate(payment.paymentDate)}
+                          </p>
+                        )}
                       </div>
                       <span className="text-xs text-muted-foreground">{FOOD_PAYMENT_METHOD_LABELS[payment.paymentMethod] ?? payment.paymentMethod}</span>
                       {payment.createdAt && (
@@ -276,13 +287,26 @@ export function OrderDetailModal({ open, onClose, order, onPay, onCancel, onRegi
               </div>
             )}
 
-            {order.idRecurringOrder && (
+            {(order.hasRecurringOrder ?? order.recurringOrder?.idRecurringOrder ?? order.idRecurringOrder) && (
               <div className="bg-violet-50 border border-violet-100 rounded-2xl p-4">
                 <div className="flex items-center gap-2">
                   <Calendar size={14} className="text-violet-600" />
                   <span className="text-xs font-bold text-violet-700">Pedido recurrente</span>
                 </div>
                 <p className="text-[10px] text-violet-600 mt-1">Generado automáticamente por configuración de pedido recurrente</p>
+              </div>
+            )}
+
+            {!isExpense && !canCancel && onDelete && (
+              <div className="border-t border-border pt-4">
+                <button
+                  type="button"
+                  onClick={() => onDelete(order)}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-sm text-rose-600 bg-rose-50 border border-rose-100 hover:bg-rose-100 active:scale-[0.99] transition-all cursor-pointer"
+                >
+                  <Trash2 size={16} />
+                  Eliminar pedido
+                </button>
               </div>
             )}
           </div>

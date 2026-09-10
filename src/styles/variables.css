@@ -111,6 +111,8 @@
   --z-modal: 50;
   --z-toast: 60;
 
+  --h-nav: 77px;
+
   --breakpoint-md: 48rem;
 
   --gradient-hero: linear-gradient(135deg, #c2185b 0%, #880e4f 55%, #ad1457 100%);

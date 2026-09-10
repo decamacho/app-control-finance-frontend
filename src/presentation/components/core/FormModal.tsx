@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Loader2 } from 'lucide-react'
 import { Modal } from './Modal'
 import { PrimaryButton } from './PrimaryButton'
 
@@ -9,10 +10,11 @@ interface FormModalProps {
   ctaLabel: string
   onSubmit: () => void
   submitting?: boolean
+  ctaClassName?: string
   children: ReactNode
 }
 
-export function FormModal({ open, onClose, title, ctaLabel, onSubmit, submitting, children }: FormModalProps) {
+export function FormModal({ open, onClose, title, ctaLabel, onSubmit, submitting, ctaClassName, children }: FormModalProps) {
   return (
     <Modal open={open} onClose={onClose} title={title}>
       <div className="flex flex-col flex-1 min-h-0">
@@ -27,7 +29,8 @@ export function FormModal({ open, onClose, title, ctaLabel, onSubmit, submitting
           >
             Cancelar
           </button>
-          <PrimaryButton onClick={onSubmit} disabled={submitting} className="md:w-auto md:px-6">
+          <PrimaryButton onClick={onSubmit} disabled={submitting} className={`md:w-auto md:px-6 ${ctaClassName ?? ''}`}>
+            {submitting && <Loader2 size={16} className="animate-spin" />}
             {ctaLabel}
           </PrimaryButton>
         </div>

@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Banknote, Smartphone, CreditCard, Receipt, XCircle, CheckCircle2 } from 'lucide-react'
+import { Banknote, Smartphone, CreditCard, Receipt, XCircle, CheckCircle2, CalendarDays } from 'lucide-react'
 import { formatMoney } from '../../../../core/domain/value-objects/money'
 import { FormModal } from '../../../components/core/FormModal'
 import { useRegisterOrderPayments } from '../../../hooks/useFoodQuery'
+import { useResetOnOpen } from '../../../hooks/useResetOnOpen'
 
 const PAYMENT_METHODS = [
   { id: 'NEQUI', label: 'Nequi', icon: Smartphone, color: 'text-fuchsia-500', bg: 'bg-fuchsia-50' },
@@ -19,17 +20,43 @@ interface FoodPaymentsModalProps {
   idOrder: string
   totalAmount: number
   pendingAmount: number
+  orderDate: string
 }
 
-export function FoodPaymentsModal({ open, onClose, idOrder, totalAmount, pendingAmount }: FoodPaymentsModalProps) {
+function toDateStr(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+function addDays(dateStr: string, days: number): string {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
+  date.setDate(date.getDate() + days)
+  return toDateStr(date)
+}
+
+export function FoodPaymentsModal({ open, onClose, idOrder, totalAmount, pendingAmount, orderDate }: FoodPaymentsModalProps) {
   const [amounts, setAmounts] = useState<Record<string, number>>(() => {
     const init: Record<string, number> = {}
     PAYMENT_METHODS.forEach((m) => { init[m.id] = 0 })
     return init
   })
   const [localError, setLocalError] = useState<string | null>(null)
+  const [paymentDate, setPaymentDate] = useState(() => toDateStr(new Date()))
 
   const { mutate: registerPayments, isPending } = useRegisterOrderPayments()
+
+  useResetOnOpen(open, () => {
+    const resetAmounts: Record<string, number> = {}
+    PAYMENT_METHODS.forEach((m) => { resetAmounts[m.id] = 0 })
+    setAmounts(resetAmounts)
+    setPaymentDate(toDateStr(new Date()))
+    setLocalError(null)
+  })
+
+  const orderedDay = orderDate ? toDateStr(new Date(`${orderDate}T12:00:00`)) : ''
+  const today = toDateStr(new Date())
+  const minDate = orderedDay ? addDays(orderedDay, -1) : addDays(today, -1)
 
   const paid = PAYMENT_METHODS.reduce((sum, m) => sum + amounts[m.id], 0)
   const remaining = Math.max(0, pendingAmount - paid)
@@ -44,11 +71,23 @@ export function FoodPaymentsModal({ open, onClose, idOrder, totalAmount, pending
       setLocalError('El total no puede superar el pendiente')
       return
     }
+    if (paymentDate > today) {
+      setLocalError('La fecha de pago no puede ser posterior a hoy')
+      return
+    }
+    if (orderedDay && paymentDate < minDate) {
+      setLocalError('La fecha de pago no puede ser más de un día antes de la fecha del pedido')
+      return
+    }
     setLocalError(null)
     const payments = PAYMENT_METHODS
       .filter((m) => amounts[m.id] > 0)
-      .map((m) => ({ amount: amounts[m.id], paymentMethod: m.id }))
-    registerPayments({ idOrder, input: { payments } }, { onSuccess: () => onClose() })
+      .map((m) => ({
+        amount: amounts[m.id],
+        paymentMethod: m.id,
+      }))
+    const paymentDateValue = orderedDay && paymentDate === orderedDay ? null : paymentDate
+    registerPayments({ idOrder, input: { payments, paymentDate: paymentDateValue } }, { onSuccess: () => onClose() })
   }
 
   return (
@@ -65,19 +104,34 @@ export function FoodPaymentsModal({ open, onClose, idOrder, totalAmount, pending
       )}
 
       <div className="bg-secondary rounded-2xl p-4 mb-5">
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="min-w-0 overflow-hidden">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Total</p>
-            <p className="text-xl font-mono font-bold text-foreground">{formatMoney(totalAmount)}</p>
+            <p className="text-sm font-mono font-bold text-foreground leading-snug break-words">{formatMoney(totalAmount)}</p>
           </div>
-          <div className="border-x border-border">
+          <div className="min-w-0 overflow-hidden">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Pagado</p>
-            <p className="text-xl font-mono font-bold text-emerald-600">{formatMoney(totalAmount - pendingAmount)}</p>
+            <p className="text-sm font-mono font-bold text-emerald-600 leading-snug break-words">{formatMoney(totalAmount - pendingAmount)}</p>
           </div>
-          <div className="border-x border-border">
+          <div className="min-w-0 overflow-hidden">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Pendiente</p>
-            <p className="text-xl font-mono font-bold text-rose-600">{formatMoney(pendingAmount)}</p>
+            <p className="text-sm font-mono font-bold text-rose-600 leading-snug break-words">{formatMoney(pendingAmount)}</p>
           </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 bg-secondary rounded-2xl px-4 py-3 mb-4">
+        <CalendarDays size={18} className="text-primary shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Fecha de pago (opcional)</p>
+          <input
+            type="date"
+            value={paymentDate}
+            min={minDate}
+            max={today}
+            onChange={(e) => setPaymentDate(e.target.value || toDateStr(new Date()))}
+            className="w-full bg-input-background border border-border rounded-xl px-3 py-2 text-sm text-foreground outline-none focus:border-primary transition-colors"
+          />
         </div>
       </div>
 
@@ -92,7 +146,7 @@ export function FoodPaymentsModal({ open, onClose, idOrder, totalAmount, pending
               type="text"
               inputMode="numeric"
               placeholder="$0"
-              className="w-28 bg-input-background border border-border rounded-xl px-3 py-2 text-sm text-right text-foreground outline-none focus:border-primary transition-colors placeholder:text-muted-foreground font-mono"
+              className="w-36 bg-input-background border border-border rounded-xl px-3 py-2 text-sm text-right text-foreground outline-none focus:border-primary transition-colors placeholder:text-muted-foreground font-mono"
               value={amounts[method.id] || ''}
               onChange={(e) => setAmounts((prev) => ({ ...prev, [method.id]: Math.max(0, Number(e.target.value) || 0) }))}
             />

@@ -1,87 +1,67 @@
-import type { ReactNode } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { OrderFilters } from '../../../../core/domain/entities/food'
-import { ORDER_STATUS_MAP, PAYMENT_STATUS_MAP, DELIVERY_STATUS_MAP, ORDER_TYPE_MAP } from '../../../type/business/constants'
 
 interface OrderFiltersBarProps {
   filters: OrderFilters
   onChange: (filters: OrderFilters) => void
 }
 
+function toDateStr(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+function shiftDay(value: string | undefined, days: number): string {
+  const base = value || toDateStr(new Date())
+  const [y, m, d] = base.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
+  date.setDate(date.getDate() + days)
+  return toDateStr(date)
+}
+
 export function OrderFiltersBar({ filters, onChange }: OrderFiltersBarProps) {
-  const hasActiveFilters = filters.status || filters.paymentStatus || filters.deliveryStatus || filters.orderType
+  const today = toDateStr(new Date())
+  const current = filters.date && filters.date <= today ? filters.date : today
+  const canNext = current < today
+
+  const prevDay = () => {
+    onChange({ ...filters, date: shiftDay(current, -1) })
+  }
+
+  const nextDay = () => {
+    if (!canNext) return
+    onChange({ ...filters, date: shiftDay(current, 1) })
+  }
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-3 mb-4 space-y-3">
-      <FilterGroup label="Estado">
-        <FilterChip
-          label="Todos"
-          active={!hasActiveFilters}
-          onClick={() => onChange({})}
+    <div className="bg-card border border-border rounded-2xl p-3 mb-4">
+      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Fecha</p>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          aria-label="Día anterior"
+          onClick={prevDay}
+          className="w-11 h-11 shrink-0 rounded-2xl bg-secondary flex items-center justify-center text-primary hover:bg-secondary/80 active:scale-[0.98] transition-all cursor-pointer"
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <input
+          type="date"
+          max={today}
+          value={current}
+          onChange={(e) => onChange({ ...filters, date: e.target.value || undefined })}
+          className="flex-1 min-w-0 bg-card border border-border rounded-xl px-3 py-2 text-sm text-foreground outline-none focus:border-primary transition-colors"
         />
-        {Object.entries(ORDER_TYPE_MAP).map(([key, config]) => (
-          <FilterChip
-            key={key}
-            label={config.label}
-            active={filters.orderType === key}
-            onClick={() => onChange({ ...filters, orderType: filters.orderType === key ? undefined : key as OrderFilters['orderType'] })}
-          />
-        ))}
-        {Object.entries(ORDER_STATUS_MAP).map(([key, config]) => (
-          <FilterChip
-            key={key}
-            label={config.label}
-            active={filters.status === key}
-            onClick={() => onChange({ ...filters, status: filters.status === key ? undefined : key })}
-          />
-        ))}
-      </FilterGroup>
-
-      <FilterGroup label="Pago">
-        {Object.entries(PAYMENT_STATUS_MAP).map(([key, config]) => (
-          <FilterChip
-            key={key}
-            label={config.label}
-            active={filters.paymentStatus === key}
-            onClick={() => onChange({ ...filters, paymentStatus: filters.paymentStatus === key ? undefined : key })}
-          />
-        ))}
-      </FilterGroup>
-
-      <FilterGroup label="Entrega">
-        {Object.entries(DELIVERY_STATUS_MAP).map(([key, config]) => (
-          <FilterChip
-            key={key}
-            label={config.label}
-            active={filters.deliveryStatus === key}
-            onClick={() => onChange({ ...filters, deliveryStatus: filters.deliveryStatus === key ? undefined : key })}
-          />
-        ))}
-      </FilterGroup>
+        <button
+          type="button"
+          aria-label="Día siguiente"
+          onClick={nextDay}
+          disabled={!canNext}
+          className="w-11 h-11 shrink-0 rounded-2xl bg-secondary flex items-center justify-center text-primary hover:bg-secondary/80 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <ChevronRight size={18} />
+        </button>
+      </div>
     </div>
-  )
-}
-
-function FilterGroup({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div>
-      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">{label}</p>
-      <div className="flex flex-wrap gap-1.5">{children}</div>
-    </div>
-  )
-}
-
-function FilterChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all cursor-pointer ${
-        active
-          ? 'border-primary bg-primary text-primary-foreground'
-          : 'border-border bg-muted/50 text-muted-foreground hover:border-primary/50 hover:text-foreground'
-      }`}
-    >
-      {label}
-    </button>
   )
 }

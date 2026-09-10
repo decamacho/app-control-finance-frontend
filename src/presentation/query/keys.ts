@@ -41,6 +41,6 @@ export const queryKeys = {
     deliverySummary: (idOrder: string) => ['food', 'orders', idOrder, 'delivery-summary'] as const,
     customerPrices: (idBusiness: string, idCustomer: string) => ['food', idBusiness, 'customers', idCustomer, 'prices'] as const,
     recurringByBusiness: (idBusiness: string) => ['food', idBusiness, 'recurring'] as const,
-    summary: (idBusiness: string) => ['food', idBusiness, 'summary'] as const,
+    summaryByCustomers: (idBusiness: string, date?: string) => ['food', idBusiness, 'summary-by-customers', date] as const,
   },
 }

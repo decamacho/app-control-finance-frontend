@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router'
-import { NAV, type Tab } from '../../type/navigation/navigation'
+import { MOBILE_NAV, type Tab } from '../../type/navigation/navigation'
 
 interface BottomNavProps {
   tab: Tab
@@ -11,7 +11,7 @@ export function BottomNav({ tab }: BottomNavProps) {
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border z-(--z-nav)">
       <div className="flex items-center max-w-md mx-auto px-1">
-        {NAV.map(({ id, label, path, Icon }) => {
+        {MOBILE_NAV.map(({ id, label, path, Icon }) => {
           const active = tab === id
           return (
             <button

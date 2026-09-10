@@ -24,7 +24,7 @@ export function FoodTabs({ value, onChange }: FoodTabsProps) {
             type="button"
             aria-pressed={active}
             onClick={() => onChange(tab.id)}
-            className={`flex-none md:flex-1 flex items-center justify-center gap-1.5 px-3.5 md:px-0 py-2 rounded-xl text-[11px] md:text-sm font-bold whitespace-nowrap transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 px-2 md:px-0 py-2 rounded-xl text-[11px] md:text-sm font-bold whitespace-nowrap transition-all ${
               active ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:bg-card/60 hover:text-foreground'
             }`}
           >

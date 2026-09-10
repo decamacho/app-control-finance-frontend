@@ -99,12 +99,14 @@ export function TiendaSection() {
         </div>
       </div>
 
-      <div className="sticky bottom-24 md:bottom-4 -mx-5 px-5 pt-3 bg-background/95 backdrop-blur-sm md:hidden">
+      <div className="fixed left-0 right-0 bottom-(--h-nav) px-5 pt-3 pb-2 bg-background/60 backdrop-blur-sm shadow-[0_-8px_16px_-8px_rgba(0,0,0,0.06)] md:hidden">
         <PrimaryButton onClick={() => setShowModal(true)}>
           <Plus size={18} />
           Registrar venta
         </PrimaryButton>
       </div>
+
+      <div className="h-6 md:hidden" aria-hidden="true" />
 
       <SaleModal
         open={showModal}

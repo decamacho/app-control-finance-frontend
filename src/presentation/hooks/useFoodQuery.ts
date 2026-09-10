@@ -87,10 +87,10 @@ export function useFoodOrders(idBusiness: string | undefined, filters?: OrderFil
   })
 }
 
-export function useDailySummary(idBusiness: string | undefined) {
+export function useDailySummaryByCustomers(idBusiness: string | undefined, date?: string) {
   return useQuery({
-    queryKey: queryKeys.food.summary(idBusiness ?? ''),
-    queryFn: () => foodRepository.getDailySummary(idBusiness!),
+    queryKey: queryKeys.food.summaryByCustomers(idBusiness ?? '', date),
+    queryFn: () => foodRepository.getDailySummaryByCustomers(idBusiness!, date),
     enabled: Boolean(idBusiness),
   })
 }

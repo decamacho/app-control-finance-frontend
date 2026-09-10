@@ -12,6 +12,7 @@ interface ExpenseModalProps {
   open: boolean
   onClose: () => void
   idBusiness?: string
+  submitting?: boolean
   onSave: (input: CreateOrderInput) => void
 }
 
@@ -22,7 +23,7 @@ function nowLocalDateTime(): string {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`
 }
 
-export function ExpenseModal({ open, onClose, idBusiness, onSave }: ExpenseModalProps) {
+export function ExpenseModal({ open, onClose, idBusiness, submitting, onSave }: ExpenseModalProps) {
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH')
@@ -65,7 +66,6 @@ export function ExpenseModal({ open, onClose, idBusiness, onSave }: ExpenseModal
       totalAmount,
       paymentMethod,
     })
-    onClose()
   }
 
   return (
@@ -75,6 +75,7 @@ export function ExpenseModal({ open, onClose, idBusiness, onSave }: ExpenseModal
       title="Nuevo gasto"
       ctaLabel="Registrar gasto"
       onSubmit={handleSave}
+      submitting={submitting}
     >
       {localError && (
         <p className="bg-rose-50 text-rose-700 border border-rose-100 rounded-xl p-3 text-sm mb-5">{localError}</p>
