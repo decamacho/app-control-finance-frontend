@@ -43,6 +43,10 @@ export function CustomerModal({ open, onClose, initial, onSave }: CustomerModalP
       setLocalError('El nombre es obligatorio')
       return
     }
+    if (!location.trim()) {
+      setLocalError('La ubicación es obligatoria')
+      return
+    }
     if (!phone.trim()) {
       setLocalError('El teléfono es obligatorio')
       return
@@ -74,7 +78,7 @@ export function CustomerModal({ open, onClose, initial, onSave }: CustomerModalP
         <input className={inputCls} placeholder="Ej: Colegio San José" value={name} onChange={(e) => setName(e.target.value)} />
       </Field>
 
-      <Field label="Ubicación">
+      <Field label="Ubicación" required>
         <input className={inputCls} placeholder="Ej: Al frente del colegio" value={location} onChange={(e) => setLocation(e.target.value)} />
       </Field>
 

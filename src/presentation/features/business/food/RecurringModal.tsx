@@ -17,6 +17,7 @@ interface RecurringModalProps {
   customers: FoodCustomer[]
   existingRecurring: RecurringOrder[]
   idBusiness?: string
+  submitting?: boolean
   onSave: (input: CreateRecurringInput) => void
 }
 
@@ -26,7 +27,7 @@ interface ItemDraft {
   customPrice?: number
 }
 
-export function RecurringModal({ open, onClose, products, customers, existingRecurring, idBusiness, onSave }: RecurringModalProps) {
+export function RecurringModal({ open, onClose, products, customers, existingRecurring, idBusiness, submitting, onSave }: RecurringModalProps) {
   const [customerId, setCustomerId] = useState('')
   const [recurringDays, setRecurringDays] = useState<RecurringDay[]>(['MON', 'WED', 'FRI'])
   const [deliveryTime, setDeliveryTime] = useState('12:00')
@@ -50,11 +51,10 @@ export function RecurringModal({ open, onClose, products, customers, existingRec
   const today = new Date().toISOString().slice(0, 10)
 
   const pricesQuery = useCustomerPrices(idBusiness, customerId || undefined)
-  const customPrices = pricesQuery.data ?? selectedCustomer?.customPrices ?? []
-  const customPriceMap = useMemo(
-    () => new Map(customPrices.map((cp) => [cp.product.idProduct, cp.customPrice])),
-    [customPrices]
-  )
+  const customPriceMap = useMemo(() => {
+    const prices = pricesQuery.data ?? selectedCustomer?.customPrices ?? []
+    return new Map(prices.map((cp) => [cp.product.idProduct, cp.customPrice]))
+  }, [pricesQuery.data, selectedCustomer?.customPrices])
 
   const getItemPrice = (productId: string) => {
     const custom = customPriceMap.get(productId)
@@ -119,11 +119,7 @@ export function RecurringModal({ open, onClose, products, customers, existingRec
       setLocalError('Selecciona al menos un día')
       return
     }
-    if (!startDate || !endDate) {
-      setLocalError('Define las fechas de inicio y fin')
-      return
-    }
-    if (startDate > endDate) {
+    if (startDate && endDate && startDate > endDate) {
       setLocalError('La fecha de inicio no puede ser mayor a la fecha de fin')
       return
     }
@@ -146,7 +142,6 @@ export function RecurringModal({ open, onClose, products, customers, existingRec
         customPrice: i.customPrice,
       })),
     })
-    onClose()
   }
 
   const customerOptions = customers.map((c) => ({ value: c.idCustomer, label: c.nameCustomer }))
@@ -158,6 +153,7 @@ export function RecurringModal({ open, onClose, products, customers, existingRec
       title="Nuevo pedido recurrente"
       ctaLabel="Crear recurrente"
       onSubmit={handleSave}
+      submitting={submitting}
     >
       {localError && (
         <p className="bg-rose-50 text-rose-700 border border-rose-100 rounded-xl p-3 text-sm mb-5">{localError}</p>
@@ -208,7 +204,7 @@ export function RecurringModal({ open, onClose, products, customers, existingRec
       </Field>
 
       <div className="grid grid-cols-2 gap-3 mb-5">
-        <Field label="Fecha inicio" required>
+        <Field label="Fecha inicio">
           <input
             className={inputCls}
             type="date"
@@ -217,7 +213,7 @@ export function RecurringModal({ open, onClose, products, customers, existingRec
             onChange={(e) => setStartDate(e.target.value)}
           />
         </Field>
-        <Field label="Fecha fin" required>
+        <Field label="Fecha fin">
           <input
             className={inputCls}
             type="date"
@@ -253,7 +249,7 @@ export function RecurringModal({ open, onClose, products, customers, existingRec
                   />
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 shrink-0">
                   <button
                     type="button"
                     onClick={() => updateItemQty(idx, Math.max(1, item.quantity - 1))}
@@ -271,17 +267,17 @@ export function RecurringModal({ open, onClose, products, customers, existingRec
                   </button>
                 </div>
 
-                <div className="flex flex-col items-end">
-                  <span className="text-xs font-mono font-bold text-foreground">
+                <div className="flex flex-col items-end justify-center shrink-0 min-w-0 max-w-[5rem]">
+                  <span className="text-xs font-mono font-bold text-foreground truncate w-full text-right">
                     {formatMoney(price * item.quantity)}
                   </span>
                   {isCustom && (
-                    <span className="text-[9px] text-primary font-bold">Custom: {formatMoney(price)}</span>
+                    <span className="text-[10px] text-primary font-bold truncate w-full text-right">Custom: {formatMoney(price)}</span>
                   )}
                 </div>
 
                 {items.length > 1 && (
-                  <button type="button" onClick={() => removeItem(idx)} className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer">
+                  <button type="button" onClick={() => removeItem(idx)} className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0">
                     <Trash2 size={13} />
                   </button>
                 )}

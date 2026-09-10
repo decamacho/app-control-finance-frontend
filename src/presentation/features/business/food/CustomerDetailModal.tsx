@@ -70,7 +70,7 @@ export function CustomerDetailModal({ open, onClose, customer, recurring, idBusi
 
   if (!customer) return null
 
-  const customerRecurring = recurring?.find((r) => r.idCustomer === customer.idCustomer)
+  const customerRecurring = recurring?.find((r) => (r.customer?.idCustomer ?? r.idCustomer) === customer.idCustomer)
 
   return (
     <Modal open={open} onClose={onClose} title={customer.nameCustomer}>
@@ -118,12 +118,19 @@ export function CustomerDetailModal({ open, onClose, customer, recurring, idBusi
               </p>
               {customerRecurring.fixedItems.length > 0 && (
                 <div className="mt-2 space-y-1">
-                  {customerRecurring.fixedItems.map((item, i) => (
-                    <p key={i} className="text-xs text-muted-foreground">
-                      {item.quantity} x {item.productName ?? item.productId}
-                      {item.customPrice ? ` · ${formatMoney(item.customPrice)}` : ''}
-                    </p>
-                  ))}
+                  {customerRecurring.fixedItems.map((item, i) => {
+                    const itemName =
+                      products.find((p) => p.idProduct === item.productId)?.nameProduct ??
+                      item.productName ??
+                      item.productId
+                    const itemPrice = item.customPrice ?? customPriceMap.get(item.productId)
+                    return (
+                      <p key={i} className="text-xs text-muted-foreground">
+                        {item.quantity} x {itemName}
+                        {itemPrice ? ` · ${formatMoney(itemPrice)}` : ''}
+                      </p>
+                    )
+                  })}
                 </div>
               )}
               <p className="text-[11px] text-muted-foreground mt-2">

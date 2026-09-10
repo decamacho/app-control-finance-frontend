@@ -89,8 +89,8 @@ export const ORDER_STATUS_MAP: Record<string, { label: string; color: string; bg
 }
 
 export const PAYMENT_STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
-  PENDING: { label: 'Pendiente', color: 'text-rose-700', bg: 'bg-rose-50 border-rose-100' },
-  PARTIAL: { label: 'Parcial', color: 'text-amber-700', bg: 'bg-amber-50 border-amber-100' },
+  PENDING: { label: 'Pendiente pago', color: 'text-rose-700', bg: 'bg-rose-50 border-rose-100' },
+  PARTIAL: { label: 'Parcialmente pago', color: 'text-amber-700', bg: 'bg-amber-50 border-amber-100' },
   PAID: { label: 'Pagado', color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-100' },
 }
 

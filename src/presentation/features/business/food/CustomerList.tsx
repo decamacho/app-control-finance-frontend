@@ -24,7 +24,7 @@ export function CustomerList({ customers, recurring, onEdit, onDelete, onViewDet
   return (
     <div className="space-y-2">
       {customers.map((customer) => {
-        const customerRecurring = recurring?.find((r) => r.idCustomer === customer.idCustomer)
+        const customerRecurring = recurring?.find((r) => (r.customer?.idCustomer ?? r.idCustomer) === customer.idCustomer)
         return (
         <div key={customer.idCustomer} className="bg-card border border-border rounded-2xl p-4">
           <div className="flex items-start gap-3">

@@ -1,5 +1,4 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
-const TOKEN_STORAGE_KEY = 'wallet_ai.access_token'
 
 interface ApiEnvelope<T> {
   success: boolean
@@ -22,20 +21,36 @@ export class ApiError extends Error {
   }
 }
 
+const NETWORK_ERROR_MESSAGE = 'Hubo un problema de conexión. Inténtalo de nuevo más tarde.'
+
+const NETWORK_ERROR_SIGNALS = ['failed to fetch', 'networkerror', 'load failed', 'network request failed']
+
+const ERROR_TRANSLATIONS: Record<string, string> = {
+  'user not found or inactive': 'Usuario no encontrado o inactivo',
+  'invalid credentials': 'Credenciales inválidas',
+  'invalid or expired token': 'Token inválido o expirado',
+}
+
+function translateErrorMessage(message: string): string {
+  return ERROR_TRANSLATIONS[message.trim().toLowerCase()] ?? message
+}
+
 export function getErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) return error.message
-  if (error instanceof Error) return error.message
+  if (error instanceof ApiError) return translateErrorMessage(error.message)
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase()
+    if (NETWORK_ERROR_SIGNALS.some((signal) => message.includes(signal))) return NETWORK_ERROR_MESSAGE
+    return translateErrorMessage(error.message)
+  }
   return 'Ocurrió un error inesperado'
 }
 
-let accessToken: string | null = localStorage.getItem(TOKEN_STORAGE_KEY)
+let accessToken: string | null = null
 let refreshPromise: Promise<string | null> | null = null
 let sessionExpiredHandler: (() => void) | null = null
 
 export function setAccessToken(token: string | null): void {
   accessToken = token
-  if (token) localStorage.setItem(TOKEN_STORAGE_KEY, token)
-  else localStorage.removeItem(TOKEN_STORAGE_KEY)
 }
 
 export function getAccessToken(): string | null {
@@ -44,6 +59,11 @@ export function getAccessToken(): string | null {
 
 export function onSessionExpired(handler: () => void): void {
   sessionExpiredHandler = handler
+}
+
+export async function restoreSession(): Promise<boolean> {
+  const token = await refreshAccessToken()
+  return Boolean(token)
 }
 
 const NO_AUTO_REFRESH_PATHS = new Set(['/auth/refresh', '/auth/login', '/auth/register'])
@@ -83,19 +103,24 @@ async function readErrorMessage(response: Response): Promise<string> {
   } catch {
     // cuerpo no JSON
   }
-  return `Error ${response.status} en ${response.url}`
+  return `Hubo un problema (${response.status}). Inténtalo de nuevo.`
 }
 
 async function request<T>(path: string, init?: RequestInit, retried = false): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      ...init?.headers,
-    },
-    credentials: 'include',
-    ...init,
-  })
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        ...init?.headers,
+      },
+      credentials: 'include',
+      ...init,
+    })
+  } catch {
+    throw new ApiError(NETWORK_ERROR_MESSAGE, 0)
+  }
 
   if (!response.ok) {
     if (response.status === 401 && !retried && !NO_AUTO_REFRESH_PATHS.has(path)) {

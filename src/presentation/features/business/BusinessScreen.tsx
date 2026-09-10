@@ -21,7 +21,7 @@ function useBusinesses() {
 }
 
 export function BusinessScreen() {
-  const [businessTab, setBusinessTab] = useState<BusinessTab>('parquedero')
+  const [businessTab, setBusinessTab] = useState<BusinessTab>('comidas')
   const { data: businesses } = useBusinesses()
 
   const parkingBusiness = businesses?.find((b: Business) => b.businessType === 'PARKING') ?? null
@@ -34,7 +34,7 @@ export function BusinessScreen() {
       <div className="px-5 pt-7 pb-4">
         <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
           <Building2 size={22} className="text-primary" />
-          Business
+          Negocio
         </h1>
         <p className="text-muted-foreground text-sm mt-0.5">Gestión de parquedero y comida rápida</p>
       </div>

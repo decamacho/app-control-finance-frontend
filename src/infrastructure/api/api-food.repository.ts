@@ -17,12 +17,19 @@ import type {
   CreateDeliveryInput,
   CreateCustomerProductPriceInput,
   OrderFilters,
-  DaySummary,
+  DaySummaryResponse,
 } from '../../core/domain/entities/food'
 import { http } from './http-client'
 
+function todayStr(): string {
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+}
+
 function buildQueryParams(idBusiness: string, filters?: OrderFilters): string {
   const params = new URLSearchParams({ idBusiness })
+  if (filters?.date && filters.date !== todayStr()) params.set('date', filters.date)
   if (filters?.status) params.set('status', filters.status)
   if (filters?.paymentStatus) params.set('paymentStatus', filters.paymentStatus)
   if (filters?.deliveryStatus) params.set('deliveryStatus', filters.deliveryStatus)
@@ -94,8 +101,9 @@ export class ApiFoodRepository implements FoodRepository {
     return http.delete<FoodOrder>(`/orders/${id}`)
   }
 
-  async getDailySummary(idBusiness: string): Promise<DaySummary> {
-    return http.get<DaySummary>(`/orders/summary/${idBusiness}`)
+  async getDailySummaryByCustomers(idBusiness: string, date?: string): Promise<DaySummaryResponse> {
+    const query = date && date !== todayStr() ? `?date=${date}` : ''
+    return http.get<DaySummaryResponse>(`/orders/summary/${idBusiness}/customers${query}`)
   }
 
   async listOrderPayments(idOrder: string): Promise<FoodPayment[]> {

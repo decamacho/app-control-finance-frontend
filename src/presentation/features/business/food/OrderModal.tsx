@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
-import type { FoodProduct, FoodCustomer, CreateOrderInput, RecurringDay } from '../../../../core/domain/entities/food'
+import type { FoodProduct, FoodCustomer, CreateOrderInput, RecurringDay, RecurringOrder } from '../../../../core/domain/entities/food'
 import { formatMoney } from '../../../../core/domain/value-objects/money'
 import { RECURRING_DAY_OPTIONS } from '../../../type/business/constants'
 import { Field } from '../../../components/core/Field'
@@ -8,13 +8,16 @@ import { FormModal } from '../../../components/core/FormModal'
 import { inputCls } from '../../../components/core/input'
 import { SelectField } from '../../../components/core/SelectField'
 import { useResetOnOpen } from '../../../hooks/useResetOnOpen'
+import { useCustomerPrices } from '../../../hooks/useFoodQuery'
 
 interface OrderModalProps {
   open: boolean
   onClose: () => void
   products: FoodProduct[]
   customers: FoodCustomer[]
+  existingRecurring: RecurringOrder[]
   idBusiness?: string
+  submitting?: boolean
   onSave: (input: CreateOrderInput) => void
 }
 
@@ -35,7 +38,7 @@ function toIsoDeliveryTime(value: string): string {
   return value
 }
 
-export function OrderModal({ open, onClose, products, customers, idBusiness, onSave }: OrderModalProps) {
+export function OrderModal({ open, onClose, products, customers, existingRecurring, idBusiness, submitting, onSave }: OrderModalProps) {
   const [customerId, setCustomerId] = useState('')
   const [items, setItems] = useState<OrderItemDraft[]>([{ idProduct: products[0]?.idProduct ?? '', quantity: 1 }])
   const [deliveryTime, setDeliveryTime] = useState('')
@@ -47,7 +50,7 @@ export function OrderModal({ open, onClose, products, customers, idBusiness, onS
   const [localError, setLocalError] = useState<string | null>(null)
 
   useResetOnOpen(open, () => {
-    setCustomerId(customers[0]?.idCustomer ?? '')
+    setCustomerId('')
     setItems([{ idProduct: products[0]?.idProduct ?? '', quantity: 1 }])
     setDeliveryTime('')
     setIsRecurring(false)
@@ -59,11 +62,19 @@ export function OrderModal({ open, onClose, products, customers, idBusiness, onS
   })
 
   const selectedCustomer = customers.find((c) => c.idCustomer === customerId)
+  const recurringForCustomer = existingRecurring.find((r) => (r.customer?.idCustomer ?? r.idCustomer) === customerId)
+  const showRecurringOption = Boolean(customerId) && !recurringForCustomer
+
+  const pricesQuery = useCustomerPrices(idBusiness, customerId || undefined)
+  const customPriceMap = useMemo(() => {
+    const prices = pricesQuery.data ?? selectedCustomer?.customPrices ?? []
+    return new Map(prices.map((cp) => [cp.product.idProduct, cp.customPrice]))
+  }, [pricesQuery.data, selectedCustomer?.customPrices])
 
   const getItemPrice = (idProduct: string, overridePrice?: number) => {
     if (overridePrice && overridePrice > 0) return overridePrice
-    const custom = selectedCustomer?.customPrices?.find((cp) => cp.product.idProduct === idProduct)
-    if (custom) return custom.customPrice
+    const custom = customPriceMap.get(idProduct)
+    if (custom !== undefined && custom > 0) return custom
     return products.find((p) => p.idProduct === idProduct)?.basePrice ?? 0
   }
 
@@ -121,12 +132,9 @@ export function OrderModal({ open, onClose, products, customers, idBusiness, onS
       setLocalError('Agrega al menos un producto con cantidad válida')
       return
     }
-    if (isRecurring && recurringDays.length === 0) {
+    const wantsRecurring = isRecurring && showRecurringOption
+    if (wantsRecurring && recurringDays.length === 0) {
       setLocalError('Selecciona al menos un día de la semana')
-      return
-    }
-    if (isRecurring && (!startDate || !endDate)) {
-      setLocalError('Define las fechas de inicio y fin')
       return
     }
     setLocalError(null)
@@ -138,15 +146,14 @@ export function OrderModal({ open, onClose, products, customers, idBusiness, onS
         idProduct: i.idProduct,
         quantity: i.quantity,
       })),
-      isRecurring: isRecurring || undefined,
-      recurringConfig: isRecurring ? {
+      isRecurring: wantsRecurring || undefined,
+      recurringConfig: wantsRecurring ? {
         recurringDays,
         deliveryTime: recurringStartTime,
         startDate,
         endDate,
       } : undefined,
     })
-    onClose()
   }
 
   const customerOptions = customers.map((c) => ({ value: c.idCustomer, label: c.nameCustomer }))
@@ -158,6 +165,7 @@ export function OrderModal({ open, onClose, products, customers, idBusiness, onS
       title="Nuevo pedido"
       ctaLabel="Crear pedido"
       onSubmit={handleSave}
+      submitting={submitting}
     >
       {localError && (
         <p className="bg-rose-50 text-rose-700 border border-rose-100 rounded-xl p-3 text-sm mb-5">{localError}</p>
@@ -183,10 +191,11 @@ export function OrderModal({ open, onClose, products, customers, idBusiness, onS
         <div className="space-y-2">
           {items.map((item, idx) => {
             const price = getItemPrice(item.idProduct, item.unitPrice)
-            const customPrice = selectedCustomer?.customPrices?.find((cp) => cp.product?.idProduct === item.idProduct)
+            const base = products.find((p) => p.idProduct === item.idProduct)?.basePrice ?? 0
+            const isCustom = price !== base
             return (
               <div key={idx} className="flex items-center gap-2 bg-card border border-border rounded-xl px-3 py-2">
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <SelectField
                     size="small"
                     placeholder="Producto"
@@ -196,7 +205,7 @@ export function OrderModal({ open, onClose, products, customers, idBusiness, onS
                   />
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 shrink-0">
                   <button
                     type="button"
                     aria-label="Disminuir"
@@ -216,15 +225,15 @@ export function OrderModal({ open, onClose, products, customers, idBusiness, onS
                   </button>
                 </div>
 
-                <div className="flex flex-col items-end">
-                  <span className="text-xs font-mono font-bold text-foreground">{formatMoney(price * item.quantity)}</span>
-                  {customPrice && (
-                    <span className="text-[9px] text-muted-foreground">Custom: {formatMoney(customPrice.customPrice)}</span>
+                <div className="flex flex-col items-end justify-center shrink-0 min-w-0 max-w-[5rem]">
+                  <span className="text-xs font-mono font-bold text-foreground truncate w-full text-right">{formatMoney(price * item.quantity)}</span>
+                  {isCustom && (
+                    <span className="text-[10px] text-primary font-bold truncate w-full text-right">Custom: {formatMoney(price)}</span>
                   )}
                 </div>
 
                 {items.length > 1 && (
-                  <button type="button" aria-label="Eliminar" onClick={() => removeItem(idx)} className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer">
+                  <button type="button" aria-label="Eliminar" onClick={() => removeItem(idx)} className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0">
                     <Trash2 size={13} />
                   </button>
                 )}
@@ -250,70 +259,72 @@ export function OrderModal({ open, onClose, products, customers, idBusiness, onS
         />
       </Field>
 
-      <div className="mb-5">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-bold text-muted-foreground tracking-wider">Pedido recurrente</p>
-          <button
-            type="button"
-            onClick={() => setIsRecurring(!isRecurring)}
-            className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${isRecurring ? 'bg-primary' : 'bg-muted'}`}
-          >
-            <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${isRecurring ? 'translate-x-5' : ''}`} />
-          </button>
-        </div>
+      {showRecurringOption && (
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-bold text-muted-foreground tracking-wider">Pedido recurrente</p>
+            <button
+              type="button"
+              onClick={() => setIsRecurring(!isRecurring)}
+              className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${isRecurring ? 'bg-primary' : 'bg-muted'}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${isRecurring ? 'translate-x-5' : ''}`} />
+            </button>
+          </div>
 
-        {isRecurring && (
-          <div className="space-y-3 bg-secondary rounded-2xl p-4">
-            <div>
-              <p className="text-xs font-bold text-muted-foreground mb-2">Días de la semana</p>
-              <div className="flex gap-1.5">
-                {RECURRING_DAY_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => toggleRecurringDay(opt.id)}
-                    className={`flex-1 py-2 rounded-xl text-[11px] font-bold border-2 transition-all ${
-                      recurringDays.includes(opt.id)
-                        ? 'border-primary bg-secondary text-foreground'
-                        : 'border-border text-muted-foreground hover:border-primary/50'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
+          {isRecurring && (
+            <div className="space-y-3 bg-secondary rounded-2xl p-4">
+              <div>
+                <p className="text-xs font-bold text-muted-foreground mb-2">Días de la semana</p>
+                <div className="flex gap-1.5">
+                  {RECURRING_DAY_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => toggleRecurringDay(opt.id)}
+                      className={`flex-1 py-2 rounded-xl text-[11px] font-bold border-2 transition-all ${
+                        recurringDays.includes(opt.id)
+                          ? 'border-primary bg-secondary text-foreground'
+                          : 'border-border text-muted-foreground hover:border-primary/50'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <Field label="Hora de entrega recurrente">
+                <input
+                  className={inputCls}
+                  type="time"
+                  value={recurringStartTime}
+                  onChange={(e) => setRecurringStartTime(e.target.value)}
+                />
+              </Field>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Fecha inicio">
+                  <input
+                    className={inputCls}
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </Field>
+                <Field label="Fecha fin">
+                  <input
+                    className={inputCls}
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </Field>
               </div>
             </div>
-
-            <Field label="Hora de entrega recurrente">
-              <input
-                className={inputCls}
-                type="time"
-                value={recurringStartTime}
-                onChange={(e) => setRecurringStartTime(e.target.value)}
-              />
-            </Field>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Fecha inicio">
-                <input
-                  className={inputCls}
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </Field>
-              <Field label="Fecha fin">
-                <input
-                  className={inputCls}
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </Field>
-            </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </FormModal>
   )
 }
