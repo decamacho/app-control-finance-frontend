@@ -165,8 +165,8 @@ export function FoodSection({ idBusiness }: FoodSectionProps) {
         </div>
 
         <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-border">
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-secondary text-muted-foreground">
-            Pedidos: {customers.length}
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-accent text-accent-foreground">
+            Pedidos: {summary?.salesCount ?? 0}
           </span>
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-100">
             Por cobrar: {pendingPaymentCount}

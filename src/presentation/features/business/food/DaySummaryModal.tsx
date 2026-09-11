@@ -45,7 +45,7 @@ function buildSummaryText(summary: DaySummaryResponse | null | undefined): strin
     lines.push('Ninguno')
   } else {
     for (const customer of summary.customers) {
-      const salesCount = summary.summary.salesCount ?? 0
+      const salesCount = customer.ordersCount ?? 0
       lines.push(`- ${customer.nameCustomer} · ${salesCount} ${salesCount === 1 ? 'venta' : 'ventas'}`)
       if (customer.paymentStatus === 'PAID') {
         if (customer.paid > customer.total) {
