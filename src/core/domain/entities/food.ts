@@ -187,6 +187,7 @@ export interface DaySummaryCustomer {
   deliveryLabel: string
   items: DaySummaryCustomerItem[]
   pendingDeliveryItems: DaySummaryCustomerItem[]
+  ordersCount: number
 }
 
 export interface DaySummaryResponse {
