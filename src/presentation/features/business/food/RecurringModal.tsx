@@ -47,7 +47,7 @@ export function RecurringModal({ open, onClose, products, customers, existingRec
   })
 
   const selectedCustomer = customers.find((c) => c.idCustomer === customerId)
-  const recurringForCustomer = existingRecurring.find((r) => r.idCustomer === customerId)
+  const recurringForCustomer = existingRecurring.find((r) => r.isActive && r.idCustomer === customerId)
   const today = new Date().toISOString().slice(0, 10)
 
   const pricesQuery = useCustomerPrices(idBusiness, customerId || undefined)
