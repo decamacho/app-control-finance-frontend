@@ -17,6 +17,7 @@ interface OrderModalProps {
   customers: FoodCustomer[]
   existingRecurring: RecurringOrder[]
   idBusiness?: string
+  filterDate?: string
   submitting?: boolean
   onSave: (input: CreateOrderInput) => void
 }
@@ -27,18 +28,22 @@ interface OrderItemDraft {
   unitPrice?: number
 }
 
-function toIsoDeliveryTime(value: string): string {
-  if (!value) return new Date().toISOString()
-  const match = /^(\d{2}):(\d{2})$/.exec(value)
-  if (match) {
-    const delivery = new Date()
-    delivery.setHours(Number(match[1]), Number(match[2]), 0, 0)
-    return delivery.toISOString()
-  }
-  return value
+function toDateStr(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
-export function OrderModal({ open, onClose, products, customers, existingRecurring, idBusiness, submitting, onSave }: OrderModalProps) {
+function toIsoDeliveryTime(value: string, date?: string): string {
+  const baseDate = date || toDateStr(new Date())
+  const match = /^(\d{2}):(\d{2})$/.exec(value)
+  if (match) {
+    return `${baseDate}T${match[1]}:${match[2]}:00.000Z`
+  }
+  if (value) return value
+  return `${baseDate}T06:00:00.000Z`
+}
+
+export function OrderModal({ open, onClose, products, customers, existingRecurring, idBusiness, filterDate, submitting, onSave }: OrderModalProps) {
   const [customerId, setCustomerId] = useState('')
   const [items, setItems] = useState<OrderItemDraft[]>([{ idProduct: products[0]?.idProduct ?? '', quantity: 1 }])
   const [deliveryTime, setDeliveryTime] = useState('')
@@ -141,7 +146,7 @@ export function OrderModal({ open, onClose, products, customers, existingRecurri
     onSave({
       idBusiness,
       idCustomer: customerId,
-      deliveryTime: toIsoDeliveryTime(deliveryTime),
+      deliveryTime: toIsoDeliveryTime(deliveryTime, filterDate),
       items: validItems.map((i) => ({
         idProduct: i.idProduct,
         quantity: i.quantity,
@@ -257,6 +262,9 @@ export function OrderModal({ open, onClose, products, customers, existingRecurri
           value={deliveryTime}
           onChange={(e) => setDeliveryTime(e.target.value)}
         />
+        <p className="text-[11px] text-muted-foreground mt-1.5">
+          Fecha de entrega: <span className="font-mono font-bold">{filterDate || 'hoy'}</span>
+        </p>
       </Field>
 
       {showRecurringOption && (

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Pause, Play, RotateCcw } from 'lucide-react'
+import { Trash2, RotateCcw } from 'lucide-react'
 import type { FoodCustomer, FoodProduct, RecurringOrder } from '../../../../core/domain/entities/food'
 import { formatMoney } from '../../../../core/domain/value-objects/money'
 import { RECURRING_DAY_LABELS } from '../../../../core/domain/entities/food'
@@ -70,7 +70,7 @@ export function CustomerDetailModal({ open, onClose, customer, recurring, idBusi
 
   if (!customer) return null
 
-  const customerRecurring = recurring?.find((r) => (r.customer?.idCustomer ?? r.idCustomer) === customer.idCustomer)
+  const customerRecurring = recurring?.find((r) => (r.customer?.idCustomer ?? r.idCustomer) === customer.idCustomer && r.isActive)
 
   return (
     <Modal open={open} onClose={onClose} title={customer.nameCustomer}>
@@ -140,15 +140,11 @@ export function CustomerDetailModal({ open, onClose, customer, recurring, idBusi
               {onToggleRecurring && (
                 <button
                   type="button"
-                  onClick={() => onToggleRecurring(customerRecurring.idRecurringOrder, !customerRecurring.isActive)}
-                  className={`mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-sm border transition-all active:scale-[0.99] cursor-pointer ${
-                    customerRecurring.isActive
-                      ? 'bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-100'
-                      : 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100'
-                  }`}
+                  onClick={() => onToggleRecurring(customerRecurring.idRecurringOrder, false)}
+                  className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-sm bg-rose-50 text-rose-700 border border-rose-100 hover:bg-rose-100 transition-all active:scale-[0.99] cursor-pointer"
                 >
-                  {customerRecurring.isActive ? <Pause size={15} /> : <Play size={15} />}
-                  {customerRecurring.isActive ? 'Pausar recurrencia' : 'Activar recurrencia'}
+                  <Trash2 size={15} />
+                  Eliminar recurrencia
                 </button>
               )}
             </div>

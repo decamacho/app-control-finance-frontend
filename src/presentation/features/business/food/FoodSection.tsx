@@ -328,6 +328,7 @@ export function FoodSection({ idBusiness }: FoodSectionProps) {
         customers={customers}
         existingRecurring={recurring}
         idBusiness={idBusiness}
+        filterDate={orderFilters.date}
         submitting={createOrder.isPending}
         onSave={(input) => {
           createOrder.mutate(input, {
